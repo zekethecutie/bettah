@@ -55,17 +55,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onViewProfile }) => {
     return (
         <div className="w-full h-full p-4 lg:p-8 animate-in fade-in duration-500 flex flex-col gap-8 mb-20 lg:mb-0">
             {/* Header */}
-            <div className="flex flex-col lg:flex-row justify-between items-end gap-6 pb-6 border-b border-slate-800">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-6 border-b border-slate-800">
                 <div>
-                    <h1 className="text-5xl font-black text-white tracking-tighter flex items-center gap-4 mb-2">
-                        <Trophy className="w-12 h-12 text-amber-400" /> 
+                    <h1 className="text-3xl lg:text-5xl font-black text-white tracking-tighter flex items-center gap-4 mb-2">
+                        <Trophy className="w-8 h-8 lg:w-12 lg:h-12 text-amber-400" /> 
                         LEADERBOARD
                     </h1>
-                    <p className="text-slate-400 font-medium">Top players across the Nexus network.</p>
+                    <p className="text-slate-400 font-medium text-sm lg:text-base">Top players across the Nexus network.</p>
                 </div>
                 
                 {/* Category Switcher */}
-                <div className="flex gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto max-w-full">
+                <div className="flex gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto max-w-full w-full lg:w-auto custom-scrollbar">
                     {CATEGORIES.map(cat => {
                         const Icon = cat.icon;
                         const isActive = activeCategory === cat.id;
@@ -73,7 +73,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onViewProfile }) => {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                className={`flex items-center gap-2 px-4 lg:px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-1 lg:flex-none justify-center ${
                                     isActive 
                                     ? `bg-slate-800 text-white shadow-lg ring-1 ring-white/10` 
                                     : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
@@ -114,7 +114,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onViewProfile }) => {
                                     rank === 2 ? 'border-slate-500/30' : 
                                     'border-orange-700/30'
                                 }`}
-                                style={{ transform: `scale(${scale})` }}
+                                style={{ transform: window.innerWidth > 768 ? `scale(${scale})` : 'none' }}
                             >
                                 {/* Rank Crown/Badge */}
                                 <div className={`absolute -top-6 w-12 h-12 rounded-full flex items-center justify-center font-black text-lg shadow-lg border-4 border-[#020617] ${
@@ -153,7 +153,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onViewProfile }) => {
                 {/* List View */}
                 <div className="lg:col-span-12 bg-slate-900/30 border border-slate-800/50 rounded-3xl overflow-hidden backdrop-blur-sm shadow-2xl">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr className="border-b border-slate-800 bg-slate-950/50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     <th className="px-6 py-5 w-20 text-center">Rank</th>

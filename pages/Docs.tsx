@@ -16,7 +16,7 @@ const FeatureCard = ({ icon: Icon, title, desc }: any) => (
 
 const Docs: React.FC = () => {
     return (
-        <div className="w-full h-full p-6 lg:p-12 animate-in fade-in duration-500 overflow-y-auto custom-scrollbar pb-24">
+        <div className="w-full h-full p-6 lg:p-12 animate-in fade-in duration-500 overflow-y-auto custom-scrollbar pb-32 lg:pb-12">
             <div className="max-w-5xl mx-auto space-y-16">
                 
                 {/* Header */}
@@ -24,10 +24,10 @@ const Docs: React.FC = () => {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold uppercase tracking-widest border border-cyan-500/20">
                         Official Guide
                     </div>
-                    <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">
+                    <h1 className="text-4xl lg:text-7xl font-black text-white tracking-tighter">
                         NEXUS <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">SYSTEMS</span>
                     </h1>
-                    <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+                    <p className="text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto">
                         A complete breakdown of our competitive ranking algorithms, progression paths, and platform features.
                     </p>
                 </div>
@@ -37,7 +37,7 @@ const Docs: React.FC = () => {
                     <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
                         <Crown className="w-8 h-8 text-amber-400" />
                         <div>
-                            <h2 className="text-3xl font-black text-white">Competitive Ranks</h2>
+                            <h2 className="text-2xl lg:text-3xl font-black text-white">Competitive Ranks</h2>
                             <p className="text-slate-400 text-sm">ELO-based matchmaking tiers.</p>
                         </div>
                     </div>
@@ -76,7 +76,7 @@ const Docs: React.FC = () => {
                     <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
                         <Target className="w-8 h-8 text-emerald-400" />
                         <div>
-                            <h2 className="text-3xl font-black text-white">Account Progression</h2>
+                            <h2 className="text-2xl lg:text-3xl font-black text-white">Account Progression</h2>
                             <p className="text-slate-400 text-sm">XP, Levels, and Quests.</p>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ const Docs: React.FC = () => {
                     <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
                         <Layout className="w-8 h-8 text-purple-400" />
                         <div>
-                            <h2 className="text-3xl font-black text-white">Core Features</h2>
+                            <h2 className="text-2xl lg:text-3xl font-black text-white">Core Features</h2>
                             <p className="text-slate-400 text-sm">Tools designed for mastery.</p>
                         </div>
                     </div>

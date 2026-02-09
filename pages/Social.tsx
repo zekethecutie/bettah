@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, UserPlus, MessageSquare, Gamepad2, Share2, Heart, MessageCircle, Send, X, AlertTriangle, CheckCircle, User as UserIcon } from 'lucide-react';
@@ -18,7 +17,7 @@ interface ActivityLog {
     friendId: string;
     username: string;
     avatar: string;
-    action: string; // e.g., "won a match against DeepBlue", "reached ELO 1500"
+    action: string; 
     time: string;
 }
 
@@ -31,22 +30,18 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
   const [newPostContent, setNewPostContent] = useState('');
   const [moderationError, setModerationError] = useState<string | null>(null);
   
-  // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   
-  // Feedback State
   const [inviteSentId, setInviteSentId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Friend Activity
   const [activityFeed, setActivityFeed] = useState<ActivityLog[]>([]);
 
   const currentUser = UserManager.getCurrentUser();
 
   useEffect(() => {
       setPosts(UserManager.getPosts());
-      // Generate mock activity feed based on friends
       generateActivity();
   }, []);
 
@@ -100,7 +95,6 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
       e.preventDefault();
       setModerationError(null);
 
-      // Moderation Check
       const moderation = moderateContent(newPostTitle, newPostContent);
       if (!moderation.approved) {
           setModerationError(moderation.reason || "Content violates community guidelines.");
@@ -135,7 +129,7 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 lg:p-8 animate-in fade-in duration-500 mb-20 lg:mb-0 relative">
+    <div className="w-full max-w-5xl mx-auto p-4 lg:p-8 animate-in fade-in duration-500 pb-28 lg:pb-8 relative">
         
         {/* Toast Notification */}
         <AnimatePresence>
@@ -152,22 +146,22 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
             )}
         </AnimatePresence>
 
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
                 <h1 className="text-3xl font-black text-white tracking-tighter">COMMUNITY</h1>
                 <p className="text-slate-400">Connect, Discuss, and Compete.</p>
             </div>
             
-            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full md:w-auto">
                 <button 
                     onClick={() => setActiveTab('friends')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'friends' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'friends' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     Friends
                 </button>
                 <button 
                     onClick={() => setActiveTab('forum')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'forum' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'forum' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     Forum
                 </button>
@@ -238,7 +232,9 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                                                 elo: 1200, 
                                                 country: 'Unknown', 
                                                 bio: '', email: '', joinedDate: '', stats: {wins:0,losses:0,draws:0}, banner: '', followers:[], following:[],
-                                                level: 1, xp: 0, streak: 0, lastLoginDate: new Date().toISOString(), activeQuests: [], completedLessons: []
+                                                level: 1, xp: 0, streak: 0, lastLoginDate: new Date().toISOString(), activeQuests: [], completedLessons: [],
+                                                coins: 0,
+                                                inventory: { ownedItems: [], equipped: { boardTheme: 'board_classic', pieceSet: 'pieces_standard' } }
                                             };
                                             handleUserClick(u);
                                         }}

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Cpu, Users, Zap, Globe, Loader2, Eye, Play, X, Crown, HelpCircle, Flame, Target, Star, Swords } from 'lucide-react';
+import { Trophy, Cpu, Users, Zap, Globe, Loader2, Eye, Play, X, Crown, HelpCircle, Flame, Target, GraduationCap, Layers, Activity, Smartphone, Swords, Star } from 'lucide-react';
 import { UserManager } from '../utils/storage';
 import { User, Quest } from '../types';
 import { RookShapeUI } from '../components/Icons';
@@ -37,7 +37,9 @@ const Home: React.FC<HomeProps> = ({ onStartGame, onViewProfile }) => {
               elo: 2400, 
               avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gary', 
               country: '🇷🇺 Russia', 
-              bio: '', email: '', joinedDate: '', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: [], level: 50, xp: 0, streak: 100, lastLoginDate: '', activeQuests: [], completedLessons: [] 
+              bio: '', email: '', joinedDate: '', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: [], level: 50, xp: 0, streak: 100, lastLoginDate: '', activeQuests: [], completedLessons: [],
+              coins: 0,
+              inventory: { ownedItems: [], equipped: { boardTheme: 'board_classic', pieceSet: 'pieces_standard' } }
           };
           onStartGame('online', undefined, mockOpponent, 'random');
       }, 3000);
@@ -64,7 +66,7 @@ const Home: React.FC<HomeProps> = ({ onStartGame, onViewProfile }) => {
           {isSearching && (
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center"
+                className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center"
               >
                   <div className="relative">
                       <div className="w-24 h-24 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin" />
@@ -77,10 +79,10 @@ const Home: React.FC<HomeProps> = ({ onStartGame, onViewProfile }) => {
           )}
       </AnimatePresence>
 
-      {/* Game Setup Modal */}
+      {/* Game Setup Modal - FIXED POSITIONING */}
       <AnimatePresence>
           {showSetup && (
-              <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                   <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }} 
                     animate={{ scale: 1, opacity: 1 }} 

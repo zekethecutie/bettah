@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, GraduationCap, CheckCircle, ChevronRight, PlayCircle, Trophy, RefreshCw, ArrowLeft, Target, Shield, Swords, AlertTriangle, Lightbulb, Sparkles } from 'lucide-react';
-import { Chess, Move, Square } from 'chess.js';
+import { BookOpen, GraduationCap, CheckCircle, PlayCircle, Trophy, RefreshCw, ArrowLeft, Target, Shield, Swords, AlertTriangle, Lightbulb, Sparkles } from 'lucide-react';
+import { Chess, Move } from 'chess.js';
 import Board, { Arrow } from '../components/Board';
 import { LESSONS } from '../utils/lessonContent';
 import { UserManager } from '../utils/storage';
 import { User, Lesson } from '../types';
+import { playSound } from '../utils/gameLogic';
 
 interface LearnProps {}
 
@@ -34,10 +35,45 @@ const Learn: React.FC<LearnProps> = () => {
         setUser(UserManager.getCurrentUser());
     }, [selectedLesson]);
 
+    // Handle Opponent Auto-Moves
+    useEffect(() => {
+        if (!selectedLesson || isSuccess) return;
+
+        // Solution array contains all moves: User, Opponent, User, Opponent...
+        if (moveIndex < selectedLesson.solutionMoves.length && moveIndex % 2 !== 0) {
+            // It is the opponent's turn in the script
+            const timer = setTimeout(() => {
+                const opponentMoveSan = selectedLesson.solutionMoves[moveIndex];
+                try {
+                    // Execute Opponent Move
+                    const result = game.move(opponentMoveSan);
+                    if (result) {
+                        const newGame = new Chess();
+                        newGame.loadPgn(game.pgn());
+                        setGame(newGame);
+                        playSound(result.captured ? 'capture' : 'move');
+                        
+                        // Advance Index
+                        setMoveIndex(prev => prev + 1);
+                    }
+                } catch (e) {
+                    console.error("Auto-play error", e);
+                }
+            }, 800); 
+            return () => clearTimeout(timer);
+        }
+    }, [moveIndex, selectedLesson, game, isSuccess]);
+
+
     const startLesson = (lesson: Lesson) => {
         const newGame = new Chess();
         if (lesson.fen) {
-            newGame.load(lesson.fen);
+            try {
+                newGame.load(lesson.fen);
+            } catch (e) {
+                console.error("Invalid FEN in lesson:", lesson.title);
+                newGame.reset();
+            }
         }
         setGame(newGame);
         setMoveIndex(0);
@@ -49,62 +85,59 @@ const Learn: React.FC<LearnProps> = () => {
 
     const showHint = () => {
         if (!selectedLesson) return;
+        if (moveIndex >= selectedLesson.solutionMoves.length) return;
+
         const expectedSan = selectedLesson.solutionMoves[moveIndex];
-        
         const tempGame = new Chess(game.fen());
         const moves = tempGame.moves({ verbose: true });
         const correctMoveObj = moves.find(m => m.san === expectedSan);
         
         if (correctMoveObj) {
             setArrows([{ from: correctMoveObj.from, to: correctMoveObj.to, color: 'green' }]);
-            setFeedback("Hint: Try looking at the green arrow.");
+            setFeedback("Hint: Follow the green arrow for the best move.");
+        } else {
+            setFeedback("Hint: Look for a move that matches the lesson description.");
         }
     };
 
     const handleLessonMove = (move: Move) => {
         if (!selectedLesson) return;
-        
+        if (moveIndex >= selectedLesson.solutionMoves.length) return;
+        if (moveIndex % 2 !== 0) return; 
+
         const expectedSan = selectedLesson.solutionMoves[moveIndex];
         
         if (move.san === expectedSan) {
-            // Correct Move
             const nextIndex = moveIndex + 1;
             setMoveIndex(nextIndex);
             
-            // Draw Green Arrow for success
             setArrows([{ from: move.from, to: move.to, color: 'green' }]);
+            setTimeout(() => setArrows([]), 800);
 
-            setFeedback("Correct! " + (nextIndex === selectedLesson.solutionMoves.length ? selectedLesson.explanation : "Keep going..."));
-            setNotification({ type: 'info', message: 'EXCELLENT' });
-
-            if (nextIndex === selectedLesson.solutionMoves.length) {
+            if (nextIndex >= selectedLesson.solutionMoves.length) {
+                setFeedback("Correct! " + selectedLesson.explanation);
+                setNotification({ type: 'info', message: 'COMPLETED' });
                 setIsSuccess(true);
                 UserManager.completeLesson(selectedLesson.id);
+            } else {
+                setFeedback("Correct! Wait for response...");
+                setNotification({ type: 'info', message: 'GOOD MOVE' });
             }
         } else {
-            // Wrong Move Logic
             const specificHint = selectedLesson.hints ? selectedLesson.hints[move.san] : null;
-            const msg = specificHint || "Incorrect. Analyze the position and try again.";
+            const msg = specificHint || "Incorrect move. Try to find the best continuation.";
             
             setFeedback(msg);
-            setNotification({ type: 'check', message: 'MISTAKE' });
+            setNotification({ type: 'check', message: 'TRY AGAIN' });
+            playSound('check'); 
 
             const userArrow: Arrow = { from: move.from, to: move.to, color: 'red' };
+            setArrows([userArrow]);
             
             setTimeout(() => {
                 const undoGame = new Chess(game.fen());
                 undoGame.undo(); 
-                
-                const moves = undoGame.moves({ verbose: true });
-                const correctMoveObj = moves.find(m => m.san === expectedSan);
-                
-                const hints: Arrow[] = [userArrow];
-                if (correctMoveObj) {
-                    hints.push({ from: correctMoveObj.from, to: correctMoveObj.to, color: 'green' });
-                }
-                
                 setGame(undoGame);
-                setArrows(hints);
             }, 800); 
         }
     };
@@ -112,7 +145,7 @@ const Learn: React.FC<LearnProps> = () => {
     const filteredLessons = LESSONS.filter(l => l.category === activeCategory);
 
     return (
-        <div className="w-full h-full p-4 lg:p-8 animate-in fade-in duration-500 flex flex-col gap-8 mb-20 lg:mb-0 pb-24 lg:pb-8">
+        <div className="w-full min-h-full p-4 lg:p-8 animate-in fade-in duration-500 flex flex-col gap-8 pb-32 lg:pb-8">
             
             {/* Header & Sidebar - HIDDEN when lesson is active */}
             {!selectedLesson && (
@@ -209,7 +242,7 @@ const Learn: React.FC<LearnProps> = () => {
                 </motion.div>
             )}
 
-            {/* Active Lesson View - Takes Full Screen */}
+            {/* Active Lesson View - Board First on Mobile */}
             <AnimatePresence>
                 {selectedLesson && (
                     <motion.div 
@@ -217,49 +250,48 @@ const Learn: React.FC<LearnProps> = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="flex flex-col xl:flex-row gap-8 h-full max-w-7xl mx-auto w-full"
+                        className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto"
                     >
-                        {/* Board Area */}
-                        <div className="flex-1 flex justify-center items-start bg-[#020617] rounded-3xl border border-slate-800 p-4 shadow-2xl relative min-h-[400px]">
-                            <div className="w-full max-w-[600px] aspect-square relative">
+                        {/* Board Area - Order 1 on Mobile ensures it's at the top */}
+                        <div className="w-full lg:flex-1 flex justify-center items-start lg:bg-[#020617] lg:rounded-3xl lg:border lg:border-slate-800 lg:p-4 lg:shadow-2xl relative order-1">
+                            <div className="w-full max-w-md lg:max-w-[600px] aspect-square relative mx-auto">
                                 <Board 
                                     game={game} 
                                     setGame={setGame} 
                                     onMove={handleLessonMove}
                                     flip={false}
                                     setNotification={setNotification}
-                                    isReadOnly={isSuccess}
+                                    isReadOnly={isSuccess || moveIndex % 2 !== 0}
                                     arrows={arrows}
                                 />
-                            </div>
-                            
-                            {/* Success Overlay - High Z-Index to cover arrows */}
-                            {isSuccess && (
-                                <motion.div 
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[70] rounded-3xl"
-                                >
-                                    <div className="text-center p-8 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl max-w-sm w-full mx-4">
-                                        <Trophy className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-                                        <h2 className="text-3xl font-black text-white mb-2">LESSON COMPLETE</h2>
-                                        <p className="text-emerald-300 font-bold mb-6">+200 XP Earned</p>
-                                        <div className="flex flex-col gap-3">
-                                            <button onClick={() => setSelectedLesson(null)} className="px-6 py-3 bg-slate-800 rounded-xl font-bold text-white hover:bg-slate-700 w-full">Back to Menu</button>
-                                            <button onClick={() => startLesson(selectedLesson)} className="px-6 py-3 bg-emerald-600 rounded-xl font-bold text-white hover:bg-emerald-500 w-full">Retry Lesson</button>
+                                
+                                {isSuccess && (
+                                    <motion.div 
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[70] rounded-lg"
+                                    >
+                                        <div className="text-center p-6 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl max-w-[280px] w-full">
+                                            <Trophy className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                                            <h2 className="text-2xl font-black text-white mb-2">COMPLETE</h2>
+                                            <p className="text-emerald-300 font-bold mb-4 text-sm">+200 XP Earned</p>
+                                            <div className="flex flex-col gap-2">
+                                                <button onClick={() => setSelectedLesson(null)} className="px-4 py-2 bg-slate-800 rounded-xl font-bold text-white text-sm hover:bg-slate-700 w-full">Back to Menu</button>
+                                                <button onClick={() => startLesson(selectedLesson)} className="px-4 py-2 bg-emerald-600 rounded-xl font-bold text-white text-sm hover:bg-emerald-500 w-full">Retry</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            )}
+                                    </motion.div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Instructions Sidebar */}
-                        <div className="xl:w-96 bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-fit shrink-0">
+                        {/* Instructions Sidebar - Order 2 on Mobile */}
+                        <div className="w-full lg:w-96 bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-fit shrink-0 order-2">
                             <button onClick={() => setSelectedLesson(null)} className="flex items-center gap-2 text-slate-500 hover:text-white mb-6 w-fit">
                                 <ArrowLeft className="w-4 h-4" /> Back to Lessons
                             </button>
 
-                            <h2 className="text-3xl font-black text-white mb-2 leading-tight">{selectedLesson.title}</h2>
+                            <h2 className="text-2xl lg:text-3xl font-black text-white mb-2 leading-tight">{selectedLesson.title}</h2>
                             <div className="flex gap-2 mb-6">
                                 <span className="inline-block px-3 py-1 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold border border-cyan-500/20">
                                     {selectedLesson.category}
@@ -292,7 +324,7 @@ const Learn: React.FC<LearnProps> = () => {
                             <div className="mt-4 flex gap-3">
                                 <button 
                                     onClick={showHint}
-                                    disabled={isSuccess}
+                                    disabled={isSuccess || moveIndex % 2 !== 0}
                                     className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Lightbulb className="w-4 h-4" /> Hint

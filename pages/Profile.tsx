@@ -184,7 +184,7 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
       {/* Header Card */}
       <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl group">
           {/* Banner */}
-          <div className="h-48 md:h-64 relative overflow-hidden bg-slate-950">
+          <div className="h-40 md:h-64 relative overflow-hidden bg-slate-950">
               {displayUser.banner && (displayUser.banner.startsWith('http') || displayUser.banner.startsWith('data:')) ? (
                   <img src={displayUser.banner} alt="Banner" className="w-full h-full object-cover opacity-80" />
               ) : (
@@ -202,27 +202,29 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
               )}
           </div>
 
-          <div className="px-6 pb-6 md:px-10 md:pb-8 relative -mt-20 flex flex-col md:flex-row items-end md:items-center gap-6">
-              {/* Avatar */}
-              <div className="relative group/avatar">
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-slate-900 overflow-hidden bg-slate-800 shadow-2xl relative">
+          <div className="px-6 pb-6 md:px-10 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-end gap-6">
+              {/* Avatar - Fixed Z-Index & Layout */}
+              <div className="relative group/avatar shrink-0">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-slate-900 overflow-hidden bg-slate-800 shadow-2xl relative z-10">
                       <img src={displayUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      {/* Rank Emblem Overlay */}
-                      <div className="absolute -bottom-4 -right-4 bg-slate-900 rounded-full p-1 border-4 border-slate-800 shadow-xl">
-                          <RankEmblem elo={displayUser.elo} className="w-14 h-14" />
-                      </div>
                   </div>
+                  
+                  {/* Rank Emblem Overlay - Moved Outside Overflow */}
+                  <div className="absolute -bottom-3 -right-3 md:-bottom-4 md:-right-4 bg-slate-900 rounded-full p-1.5 border-4 border-slate-800 shadow-xl z-20">
+                      <RankEmblem elo={displayUser.elo} className="w-12 h-12 md:w-14 md:h-14" />
+                  </div>
+
                   {isCurrentUser && (
                       <button 
                         onClick={() => avatarInputRef.current?.click()}
-                        className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 transition-opacity rounded-2xl m-1 z-10"
+                        className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 transition-opacity rounded-3xl m-1 z-30"
                       >
                           <Camera className="w-8 h-8 text-white" />
                       </button>
                   )}
               </div>
 
-              <div className="flex-1 text-center md:text-left mb-2 md:mb-0 mt-4 md:mt-0">
+              <div className="flex-1 text-center md:text-left mb-2 md:mb-0 mt-2 md:mt-0">
                   <div className="flex flex-col md:flex-row items-center gap-3 mb-1">
                       <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{displayUser.username}</h1>
                       <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
@@ -239,7 +241,7 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
                   
                   {/* Bio */}
                   {isEditing ? (
-                      <div className="flex flex-col gap-2 w-full max-w-lg">
+                      <div className="flex flex-col gap-2 w-full max-w-lg mx-auto md:mx-0">
                           <textarea 
                               value={editBio} 
                               onChange={(e) => setEditBio(e.target.value)}
@@ -259,30 +261,30 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-3 min-w-[140px]">
+              <div className="flex flex-col gap-3 min-w-[140px] w-full md:w-auto">
                   {isCurrentUser ? (
                       <button 
                         onClick={() => { setEditBio(displayUser.bio); setIsEditing(true); }}
-                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all border border-slate-700 hover:border-slate-500 flex items-center justify-center gap-2"
+                        className="w-full px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all border border-slate-700 hover:border-slate-500 flex items-center justify-center gap-2"
                       >
                           <Edit2 className="w-4 h-4" /> Edit Profile
                       </button>
                   ) : (
                       <button 
                         onClick={toggleFollow}
-                        className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isFollowing ? 'bg-slate-800 text-slate-300 hover:text-rose-400' : 'bg-cyan-600 text-white hover:bg-cyan-500'}`}
+                        className={`w-full px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isFollowing ? 'bg-slate-800 text-slate-300 hover:text-rose-400' : 'bg-cyan-600 text-white hover:bg-cyan-500'}`}
                       >
                           {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
                       </button>
                   )}
                   
                   <div className="flex justify-between px-4 py-3 bg-slate-950/50 rounded-xl border border-slate-800">
-                      <div className="text-center">
+                      <div className="text-center flex-1">
                           <p className="text-xs text-slate-500 uppercase font-bold">Followers</p>
                           <p className="font-black text-white">{displayUser.followers?.length || 0}</p>
                       </div>
-                      <div className="w-px bg-slate-800" />
-                      <div className="text-center">
+                      <div className="w-px bg-slate-800 mx-2" />
+                      <div className="text-center flex-1">
                           <p className="text-xs text-slate-500 uppercase font-bold">Following</p>
                           <p className="font-black text-white">{displayUser.following?.length || 0}</p>
                       </div>
@@ -306,16 +308,16 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
 
           {/* Main Content Tabs */}
           <div className="lg:col-span-2">
-              <div className="flex gap-4 mb-6 border-b border-slate-800 pb-2">
+              <div className="flex gap-4 mb-6 border-b border-slate-800 pb-2 overflow-x-auto">
                   <button 
                     onClick={() => setActiveTab('overview')}
-                    className={`pb-2 px-4 font-bold text-sm transition-all ${activeTab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
                   >
                       Overview
                   </button>
                   <button 
                     onClick={() => setActiveTab('history')}
-                    className={`pb-2 px-4 font-bold text-sm transition-all ${activeTab === 'history' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'history' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
                   >
                       Match History
                   </button>

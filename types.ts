@@ -12,6 +12,30 @@ export interface Particle {
   type: 'circle' | 'spark' | 'ring';
 }
 
+// Economy & Shop
+export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type ItemType = 'board_theme' | 'piece_set' | 'avatar_frame';
+
+export interface ShopItem {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    type: ItemType;
+    rarity: ItemRarity;
+    previewColor?: string; // For board themes
+    config?: any; // Technical config (colors, svg paths, etc)
+}
+
+export interface UserInventory {
+    ownedItems: string[]; // List of Item IDs
+    equipped: {
+        boardTheme: string; // Item ID
+        pieceSet: string; // Item ID
+        avatarFrame?: string;
+    };
+}
+
 export interface GameState {
   fen: string;
   turn: Color;
@@ -21,8 +45,6 @@ export interface GameState {
   history: string[];
   captured: { w: PieceSymbol[]; b: PieceSymbol[] };
 }
-
-export type Theme = 'neon' | 'glass' | 'classic';
 
 export const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 export const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
@@ -36,11 +58,12 @@ export interface Quest {
   target: number;
   progress: number;
   rewardXp: number;
+  rewardCoins: number;
   penaltyXp: number;
   expiresAt: string;
   completed: boolean;
   difficulty: 'easy' | 'medium' | 'hard' | 'grandmaster';
-  isBonus?: boolean; // New flag for auto-refilled quests
+  isBonus?: boolean; 
 }
 
 export interface Lesson {
@@ -50,18 +73,17 @@ export interface Lesson {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Grandmaster';
   description: string;
   fen: string;
-  solutionMoves: string[]; // SAN array
+  solutionMoves: string[]; 
   explanation: string;
-  hints?: Record<string, string>; // Map specific wrong moves to feedback strings
+  hints?: Record<string, string>;
 }
 
-// Social & Account Types
 export interface User {
   id: string;
   username: string;
   email: string;
-  avatar: string; // URL or base64 or preset id
-  banner: string; // Color or image URL
+  avatar: string; 
+  banner: string; 
   bio: string;
   country: string;
   elo: number;
@@ -74,26 +96,29 @@ export interface User {
   followers: string[];
   following: string[];
   
-  // Progression
+  // Progression & Economy
   level: number;
   xp: number;
+  coins: number;
   streak: number;
   lastLoginDate: string;
   activeQuests: Quest[];
-  completedLessons: string[]; // IDs
+  completedLessons: string[];
+  inventory: UserInventory;
 }
 
 export interface MatchRecord {
   id: string;
   date: string;
-  opponent: string; // Username or "Computer"
+  opponent: string; 
   opponentElo: number;
   result: 'win' | 'loss' | 'draw';
   pgn: string;
-  mode: 'bullet' | 'blitz' | 'rapid' | 'computer';
-  playerSide: 'w' | 'b'; // Crucial for accurate replays
+  mode: 'bullet' | 'blitz' | 'rapid' | 'computer' | 'pulse';
+  playerSide: 'w' | 'b'; 
   isStreamVod?: boolean;
   vodTitle?: string;
+  score?: number; // For Pulse mode
 }
 
 export interface Friend {
@@ -136,9 +161,9 @@ export interface Notification {
   };
   title: string;
   content: string;
-  timestamp: string; // ISO string
+  timestamp: string; 
   read: boolean;
-  meta?: any; // For game invite IDs, etc.
+  meta?: any; 
 }
 
 export interface ChatMessage {

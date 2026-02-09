@@ -4,7 +4,7 @@ import { Chess, Move, PieceSymbol } from 'chess.js';
 import Board from '../components/Board';
 import InfoPanel from '../components/InfoPanel';
 import GameOverOverlay from '../components/GameOverOverlay';
-import LiveStreamOverlay from '../components/LiveStreamOverlay'; // Import Overlay
+import LiveStreamOverlay from '../components/LiveStreamOverlay'; 
 import { RotateCw, RefreshCw, Undo2, ChevronLeft, Play, Pause, FastForward, Rewind, Eye, Flag, AlertTriangle, X, Radio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBestMove } from '../utils/chessAI';
@@ -88,14 +88,14 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             setUserSide(replayMatch.playerSide);
             setBoardOrientation(!isUserWhite);
 
-            // Reconstruct User Objects for InfoPanel
-            // We assume the stored opponent name is accurate. ELO is snapshot from match record.
             const opponentObj: User = { 
                 id: 'replay_opp', 
                 username: replayMatch.opponent, 
                 elo: replayMatch.opponentElo, 
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${replayMatch.opponent}`, // Consistent seed
-                country: 'Unknown', bio: '', email: '', joinedDate: '', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: [], level: 1, xp: 0, streak: 0, lastLoginDate: '', activeQuests: [], completedLessons: []
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${replayMatch.opponent}`, 
+                country: 'Unknown', bio: '', email: '', joinedDate: '', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: [], level: 1, xp: 0, streak: 0, lastLoginDate: '', activeQuests: [], completedLessons: [],
+                coins: 0,
+                inventory: { ownedItems: [], equipped: { boardTheme: 'board_classic', pieceSet: 'pieces_standard' } }
             };
 
             if (currentUser) {
@@ -128,7 +128,10 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                 username: gameMode === 'computer' ? 'Stockfish Lite' : 'Player 2', 
                 elo: difficulty === 'hard' ? 2000 : difficulty === 'medium' ? 1200 : 800, 
                 avatar: gameMode === 'computer' ? 'https://api.dicebear.com/7.x/bottts/svg?seed=SF' : 'https://api.dicebear.com/7.x/avataaars/svg?seed=P2',
-                bio: '', email: '', joinedDate: '', country: gameMode === 'computer' ? 'CPU' : 'Local', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: []
+                bio: '', email: '', joinedDate: '', country: gameMode === 'computer' ? 'CPU' : 'Local', stats: {wins:0,losses:0,draws:0}, banner: '', followers: [], following: [],
+                level: 1, xp: 0, streak: 0, lastLoginDate: '', activeQuests: [], completedLessons: [],
+                coins: 0,
+                inventory: { ownedItems: [], equipped: { boardTheme: 'board_classic', pieceSet: 'pieces_standard' } }
             };
 
             if (finalSide === 'w') {
@@ -160,7 +163,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
 
   const toggleStream = () => {
       if (isStreaming) {
-          // Stop Streaming
           setNotification({ type: 'info', message: 'Stream Ended. VOD Saved.' });
           setIsStreaming(false);
       } else {
@@ -176,12 +178,11 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         setCaptured({ w: [], b: [] });
         setGameOverData(null);
         setNotification({ type: 'info', message: 'GAME START' });
-        lastTimeRef.current = Date.now(); // Reset timestamp
+        lastTimeRef.current = Date.now(); 
         playSound('start');
   };
 
-  // ROBUST TIMER LOGIC
-  // Uses Date.now() delta to ensure timer keeps accurate time even if main thread blocks during AI calculation
+  // Timer Logic
   useEffect(() => {
     let animationFrameId: number;
     
@@ -190,41 +191,34 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             const now = Date.now();
             const delta = now - lastTimeRef.current;
             
-            // Update only if at least 100ms passed to avoid excessive state updates, but keep precise tracking
             if (delta >= 100) {
                 const deltaSeconds = delta / 1000;
-                
                 if (game.turn() === 'w') {
                     setWhiteTime(prev => {
                         const next = Math.max(0, prev - deltaSeconds);
-                        if (next <= 0 && !gameOverData) {
-                            setGameOverData({ type: 'timeout', winner: 'b' });
-                        }
+                        if (next <= 0 && !gameOverData) setGameOverData({ type: 'timeout', winner: 'b' });
                         return next;
                     });
                 } else {
                     setBlackTime(prev => {
                         const next = Math.max(0, prev - deltaSeconds);
-                        if (next <= 0 && !gameOverData) {
-                            setGameOverData({ type: 'timeout', winner: 'w' });
-                        }
+                        if (next <= 0 && !gameOverData) setGameOverData({ type: 'timeout', winner: 'w' });
                         return next;
                     });
                 }
                 lastTimeRef.current = now;
             }
-            
             animationFrameId = requestAnimationFrame(updateTimer);
         }
     };
 
     if (gameMode !== 'replay' && !gameOverData) {
-        lastTimeRef.current = Date.now(); // Sync start time
+        lastTimeRef.current = Date.now(); 
         animationFrameId = requestAnimationFrame(updateTimer);
     }
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [gameMode, gameOverData, game.turn()]); // Dependency on turn ensures we switch clocks correctly
+  }, [gameMode, gameOverData, game.turn()]);
 
   // Handle Game End Logic & Saving
   useEffect(() => {
@@ -242,7 +236,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
 
         setGameOverData({ type, winner });
         
-        // AUTO STOP STREAM ON GAME OVER
         const wasStreaming = isStreaming;
         if (isStreaming) {
             setIsStreaming(false);
@@ -254,10 +247,8 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   }, [game]);
 
   const saveGameResult = (winner: 'w' | 'b' | null, type: string, wasStreaming: boolean) => {
-        // Only save if it's a "real" match
         if (gameMode === 'computer' || gameMode === 'online') {
             const result = winner ? (winner === userSide ? 'win' : 'loss') : 'draw';
-            
             const opponentName = (userSide === 'w' ? blackUser?.username : whiteUser?.username) || 'Opponent';
             const vodTitle = wasStreaming ? `Live Stream vs ${opponentName}` : undefined;
 
@@ -286,38 +277,23 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
       }
   };
 
-  const confirmExit = () => {
-       // This is for exiting MID-GAME via the menu (Forfeit)
-       handleResign();
-  };
+  const confirmExit = () => { handleResign(); };
 
   const handleResign = () => {
-       // Identify Winner (Opponent wins if I resign)
        const winner = userSide === 'w' ? 'b' : 'w';
-       
        const wasStreaming = isStreaming;
        if (isStreaming) setIsStreaming(false);
-
-       // 1. Set Game Over State (Triggers Overlay)
        setGameOverData({ type: 'resign', winner });
-       
-       // 2. Play Sound
        playSound('game-over');
-
-       // 3. Save Result
        saveGameResult(winner, 'resign', wasStreaming);
-       
-       // 4. Close Confirmation
        setShowExitConfirm(false);
   };
 
-  // Replay Logic with Speed Control
+  // Replay Logic
   useEffect(() => {
     let interval: number;
     if (gameMode === 'replay' && isPlaying && replayMatch) {
-        // Base speed is 1.5s per move for "Real Time" feel
         const delay = 1500 / replaySpeed;
-        
         interval = window.setInterval(() => {
             if (replayStep < totalSteps) stepReplay(1);
             else setIsPlaying(false);
@@ -354,38 +330,27 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   useEffect(() => {
      const history = game.history({ verbose: true });
      updateCapturedFromHistory(history);
-     
-     // Scroll mobile history
-     if(mobileHistoryRef.current) {
-         mobileHistoryRef.current.scrollLeft = mobileHistoryRef.current.scrollWidth;
-     }
+     if(mobileHistoryRef.current) mobileHistoryRef.current.scrollLeft = mobileHistoryRef.current.scrollWidth;
   }, [game, updateCapturedFromHistory]);
 
   // AI & Spectator Logic
   useEffect(() => {
     if (gameOverData) return;
 
-    // AI Opponent Move Logic
-    // Trigger if it's Computer/Online mode and it is NOT the user's turn
     if ((gameMode === 'computer' || gameMode === 'online') && game.turn() !== userSide) {
-        
-        // Safety Delay: Wait 600ms before starting AI thinking to let user animations finish
         const animationSafetyTimer = setTimeout(() => {
             const makeAiMove = async () => {
                 setIsAiThinking(true);
                 const diff = gameMode === 'online' ? 'hard' : difficulty;
                 const moveString = await getBestMove(game, diff as 'easy' | 'medium' | 'hard');
                 setIsAiThinking(false);
-                
                 if (moveString) executeGameMove(moveString);
             };
             makeAiMove();
-        }, 600); // Wait for sliding animation (approx 500ms)
-
+        }, 600);
         return () => clearTimeout(animationSafetyTimer);
     }
 
-    // Spectator Mode (AI vs AI)
     if (gameMode === 'spectator' && isPlaying) {
         const makeSpectatorMove = async () => {
             const delay = Math.random() * 1000 + 500;
@@ -397,7 +362,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         };
         makeSpectatorMove();
     }
-
   }, [game.fen(), gameMode, difficulty, gameOverData, isPlaying, userSide]);
 
   const executeGameMove = (moveString: string) => {
@@ -414,20 +378,15 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         } catch (e) { console.error(e); }
   };
 
-  const handleMove = (move: Move) => { /* Board component handles setGame */ };
+  const handleMove = (move: Move) => { /* Board handles state */ };
 
   const undoMove = () => {
-      // STRICT CONTROL: Only allowed in Computer mode during user turn
       if (gameMode !== 'computer' || gameOverData || isAiThinking) return;
-      
       const newGame = new Chess();
       newGame.loadPgn(game.pgn());
-      
-      // If it's my turn, undo last two moves (AI then Me)
-      // If AI hasn't moved yet (rare race condition), just undo me
       if (game.turn() === userSide) {
-          newGame.undo(); // Undo AI
-          newGame.undo(); // Undo Me
+          newGame.undo(); 
+          newGame.undo(); 
       }
       setGame(newGame);
       playSound('move');
@@ -442,56 +401,33 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const simpleHistory = game.history();
 
   return (
-    <div className="w-full h-[100dvh] flex flex-col lg:flex-row bg-[#050505] overflow-hidden">
+    <div className="w-full h-full lg:h-[100dvh] flex flex-col lg:flex-row bg-[#050505] overflow-hidden fixed inset-0">
         <LiveStreamOverlay isStreaming={isStreaming} onStopStream={toggleStream} viewerCount={viewerCount} />
 
         <AnimatePresence>
             {gameOverData && (
-                <GameOverOverlay 
-                    type={gameOverData.type}
-                    winner={gameOverData.winner}
-                    onRematch={startNewGame}
-                    onExit={onExit}
-                />
+                <GameOverOverlay type={gameOverData.type} winner={gameOverData.winner} onRematch={startNewGame} onExit={onExit} />
             )}
             
-            {/* Exit Confirmation Modal */}
             {showExitConfirm && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
-                    <motion.div 
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        className="bg-slate-900 border border-rose-500/30 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
-                    >
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-slate-900 border border-rose-500/30 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
                         <div className="w-16 h-16 rounded-full bg-rose-900/30 flex items-center justify-center mx-auto mb-4">
                             <AlertTriangle className="w-8 h-8 text-rose-500" />
                         </div>
                         <h2 className="text-2xl font-black text-white mb-2">STOP MATCH?</h2>
-                        <p className="text-slate-400 text-sm mb-6">
-                            Exiting now will result in an automatic <span className="text-rose-400 font-bold">LOSS</span>. Are you sure?
-                        </p>
+                        <p className="text-slate-400 text-sm mb-6">Exiting now will result in an automatic <span className="text-rose-400 font-bold">LOSS</span>. Are you sure?</p>
                         <div className="flex gap-3">
-                            <button 
-                                onClick={() => setShowExitConfirm(false)}
-                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={confirmExit}
-                                className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-rose-900/20"
-                            >
-                                Forfeit
-                            </button>
+                            <button onClick={() => setShowExitConfirm(false)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl">Cancel</button>
+                            <button onClick={confirmExit} className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg">Forfeit</button>
                         </div>
                     </motion.div>
                 </div>
             )}
         </AnimatePresence>
 
-        {/* --- MOBILE: Top Bar --- */}
-        <div className="lg:hidden flex justify-between items-center p-3 bg-slate-900 border-b border-slate-800 z-10 shrink-0">
+        {/* --- MOBILE: Top Bar (Fixed) --- */}
+        <div className="lg:hidden flex justify-between items-center p-3 bg-slate-900 border-b border-slate-800 z-20 shrink-0 safe-pt">
             <button onClick={handleExitRequest} className="p-2 text-slate-400"><ChevronLeft className="w-5 h-5" /></button>
             <div className="font-black text-lg tracking-tight flex items-center gap-2">
                 NEXUS<span className="text-cyan-400">CHESS</span>
@@ -500,40 +436,20 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             <div className="w-9" />
         </div>
 
-        {/* --- DESKTOP: Sidebar / Controls --- */}
-        <div className="hidden lg:flex flex-col w-80 bg-slate-900/50 border-r border-slate-800 p-6 z-10 shrink-0">
+        {/* --- DESKTOP: Sidebar (Fixed Width) --- */}
+        <div className="hidden lg:flex flex-col w-80 bg-slate-900/50 border-r border-slate-800 p-6 z-10 shrink-0 h-full">
              <button onClick={handleExitRequest} className="flex items-center gap-2 text-slate-400 hover:text-white mb-8">
-                <ChevronLeft className="w-4 h-4" /> Exit
+                <ChevronLeft className="w-4 h-4" /> Exit Match
             </button>
             
-            {/* Info Panel: Pass isReplay to modify display */}
-            <InfoPanel 
-                game={game} 
-                captured={captured} 
-                whiteTime={whiteTime} 
-                blackTime={blackTime} 
-                whiteUser={whiteUser} 
-                blackUser={blackUser}
-                isReplay={gameMode === 'replay'}
-                replayStep={replayStep}
-                totalSteps={totalSteps}
-            />
+            <InfoPanel game={game} captured={captured} whiteTime={whiteTime} blackTime={blackTime} whiteUser={whiteUser} blackUser={blackUser} isReplay={gameMode === 'replay'} replayStep={replayStep} totalSteps={totalSteps} />
             
             <div className="mt-6 space-y-3">
-                 {/* Stream Button */}
                  {(gameMode === 'computer' || gameMode === 'online') && !gameOverData && (
-                     <button 
-                        onClick={toggleStream} 
-                        className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-                            isStreaming 
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30' 
-                            : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
-                        }`}
-                     >
+                     <button onClick={toggleStream} className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${isStreaming ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-indigo-600/20 text-indigo-400'}`}>
                         {isStreaming ? <><X className="w-4 h-4"/> Stop Stream</> : <><Radio className="w-4 h-4"/> Stream Match</>}
                      </button>
                  )}
-
                  {gameMode === 'computer' && (
                     <button onClick={undoMove} className="w-full py-3 bg-slate-800 rounded-xl font-bold text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-2"><Undo2 className="w-4 h-4"/> Undo</button>
                  )}
@@ -545,48 +461,8 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                  ) : (gameMode !== 'spectator' && gameMode !== 'replay') && (
                      <button onClick={startNewGame} className="w-full py-3 bg-cyan-600/20 text-cyan-400 rounded-xl font-bold hover:bg-cyan-600/30 flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4"/> New Game</button>
                  )}
-                 {gameMode === 'spectator' && (
-                     <div className="bg-red-900/20 border border-red-500/50 p-4 rounded-xl text-center">
-                         <div className="flex items-center justify-center gap-2 text-red-500 font-bold mb-2">
-                             <Eye className="w-5 h-5" /> SPECTATING
-                         </div>
-                         <p className="text-xs text-red-300">Live Grandmaster Match</p>
-                     </div>
-                 )}
-                 
-                 {/* Replay Controls - Enhanced */}
-                 {gameMode === 'replay' && (
-                     <div className="flex flex-col gap-3">
-                         {/* Playback Controls */}
-                         <div className="flex gap-2">
-                             <button onClick={() => stepReplay(-1)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center">
-                                 <ChevronLeft className="w-4 h-4" />
-                             </button>
-                             <button onClick={() => setIsPlaying(!isPlaying)} className={`flex-1 py-3 rounded-xl flex items-center justify-center ${isPlaying ? 'bg-amber-500 hover:bg-amber-400 text-slate-900' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}>
-                                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                             </button>
-                             <button onClick={() => stepReplay(1)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center">
-                                 <Play className="w-4 h-4" />
-                             </button>
-                         </div>
-                         
-                         {/* Speed Toggles */}
-                         <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
-                             {[1, 2, 4].map(speed => (
-                                 <button 
-                                    key={speed}
-                                    onClick={() => setReplaySpeed(speed as any)}
-                                    className={`flex-1 py-1 text-xs font-bold rounded-lg transition-colors ${replaySpeed === speed ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
-                                 >
-                                     {speed}x
-                                 </button>
-                             ))}
-                         </div>
-                     </div>
-                 )}
             </div>
             
-            {/* Move List */}
             <div className="flex-1 mt-6 bg-slate-950/50 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
                 <div className="p-3 bg-slate-900 font-bold text-xs text-slate-500 uppercase">Moves</div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
@@ -606,16 +482,21 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             </div>
         </div>
 
-        {/* --- MAIN AREA (BOARD) --- */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#020617] relative p-0 lg:p-4">
-            {/* Board Container - Responsive logic */}
-            <div className="w-full max-w-[100vw] lg:max-w-2xl px-2 lg:px-0 flex-1 flex flex-col justify-center">
-                <div className="lg:hidden w-full mb-2">
-                     {/* Mobile Top Opponent Info */}
+        {/* --- MAIN AREA: BOARD + MOBILE CONTROLS --- */}
+        {/* We use flex-col for mobile. The board takes flex-1 but with min-h-0 to allow shrinking. */}
+        <div className="flex-1 flex flex-col bg-[#020617] relative w-full h-full overflow-hidden">
+            
+            {/* Board Container */}
+            <div className="flex-1 flex flex-col justify-center items-center px-4 w-full min-h-0 relative">
+                
+                {/* Mobile: Opponent Info (Above Board) */}
+                <div className="lg:hidden w-full max-w-md pb-2 shrink-0">
                      <InfoPanel game={game} captured={captured} whiteTime={whiteTime} blackTime={blackTime} whiteUser={whiteUser} blackUser={blackUser} mobileMode="top" isReplay={gameMode === 'replay'} replayStep={replayStep} totalSteps={totalSteps} />
                 </div>
 
-                <div className="w-full aspect-square relative z-0">
+                {/* The Board: Constrained by both width and height to fit in viewport */}
+                {/* The aspect-square ensures it stays square. max-h calculation prevents overlap. */}
+                <div className="w-full max-w-md aspect-square relative z-0 shrink-1" style={{ maxHeight: 'calc(100dvh - 240px)' }}> 
                     <Board 
                         game={game} 
                         setGame={setGame} 
@@ -627,57 +508,53 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                     />
                 </div>
 
-                <div className="lg:hidden w-full mt-2">
-                     {/* Mobile Bottom Player Info */}
+                {/* Mobile: Player Info (Below Board) */}
+                <div className="lg:hidden w-full max-w-md pt-2 shrink-0">
                      <InfoPanel game={game} captured={captured} whiteTime={whiteTime} blackTime={blackTime} whiteUser={whiteUser} blackUser={blackUser} mobileMode="bottom" isReplay={gameMode === 'replay'} replayStep={replayStep} totalSteps={totalSteps} />
-                </div>
-                
-                {/* Mobile History View */}
-                <div className="lg:hidden w-full mt-2 h-10 bg-slate-900/80 rounded-lg overflow-x-auto whitespace-nowrap flex items-center px-2 border border-slate-800" ref={mobileHistoryRef}>
-                    {simpleHistory.length === 0 ? (
-                        <span className="text-xs text-slate-600 italic">Game started...</span>
-                    ) : (
-                        simpleHistory.map((move, i) => (
-                            <span key={i} className="text-sm font-mono text-slate-400 mr-2">
-                                {i % 2 === 0 ? <span className="text-slate-600 mr-1">{(i/2)+1}.</span> : ''}
-                                <span className={i === simpleHistory.length - 1 ? "text-cyan-400 font-bold" : ""}>{move}</span>
-                            </span>
-                        ))
-                    )}
                 </div>
             </div>
 
-            {/* Mobile Controls Bar */}
-             <div className="lg:hidden w-full bg-slate-900 border-t border-slate-800 p-2 flex gap-2 justify-center shrink-0 safe-pb">
-                 {gameMode === 'spectator' ? (
-                     <div className="w-full text-center text-red-500 font-bold py-3 flex items-center justify-center gap-2">
-                         <Eye className="w-5 h-5" /> WATCHING LIVE
-                     </div>
-                 ) : gameMode === 'replay' ? (
-                     <>
-                        <button onClick={() => stepReplay(-1)} className="flex-1 py-3 bg-slate-800 rounded-lg text-white"><ChevronLeft className="w-5 h-5 mx-auto"/></button>
-                        <button onClick={() => setIsPlaying(!isPlaying)} className={`flex-1 py-3 rounded-lg text-white ${isPlaying ? 'bg-amber-500' : 'bg-cyan-600'}`}>{isPlaying ? <Pause className="w-5 h-5 mx-auto"/> : <Play className="w-5 h-5 mx-auto"/></button>
-                        <button onClick={() => stepReplay(1)} className="flex-1 py-3 bg-slate-800 rounded-lg text-white"><Play className="w-5 h-5 mx-auto"/></button>
-                     </>
-                 ) : (
-                     <>
-                        {gameMode === 'computer' && (
-                             <button onClick={undoMove} className="flex-1 py-3 bg-slate-800 rounded-lg text-slate-400"><Undo2 className="w-5 h-5 mx-auto"/></button>
-                        )}
-                        
-                        {(gameMode === 'computer' || gameMode === 'online') && (
-                             <button onClick={toggleStream} className={`flex-1 py-3 rounded-lg ${isStreaming ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
-                                 <Radio className="w-5 h-5 mx-auto" />
-                             </button>
-                        )}
+            {/* Mobile: Bottom Controls (Fixed Height) */}
+             <div className="lg:hidden w-full bg-slate-900 border-t border-slate-800 p-3 flex flex-col gap-2 shrink-0 safe-pb z-20">
+                 {/* Compact History Strip */}
+                 <div className="h-8 bg-slate-950/50 rounded-lg overflow-x-auto whitespace-nowrap flex items-center px-2 border border-slate-800/50" ref={mobileHistoryRef}>
+                    {simpleHistory.length === 0 ? <span className="text-[10px] text-slate-600">Game started...</span> : simpleHistory.map((move, i) => (
+                        <span key={i} className="text-xs font-mono text-slate-400 mr-2">{i % 2 === 0 ? <span className="text-slate-600 mr-1">{(i/2)+1}.</span> : ''}<span className={i === simpleHistory.length - 1 ? "text-cyan-400 font-bold" : ""}>{move}</span></span>
+                    ))}
+                 </div>
 
-                        {gameMode === 'online' ? (
-                             <button onClick={() => setShowExitConfirm(true)} className="flex-1 py-3 bg-rose-900/30 text-rose-400 rounded-lg"><Flag className="w-5 h-5 mx-auto"/></button>
-                        ) : (
-                             <button onClick={startNewGame} className="flex-1 py-3 bg-cyan-900/30 text-cyan-400 rounded-lg"><RefreshCw className="w-5 h-5 mx-auto"/></button>
-                        )}
-                     </>
-                 )}
+                 {/* Action Buttons */}
+                 <div className="flex gap-2">
+                     {gameMode === 'spectator' ? (
+                         <div className="w-full text-center text-red-500 font-bold py-2 flex items-center justify-center gap-2 bg-red-900/10 rounded-lg border border-red-900/30">
+                             <Eye className="w-4 h-4" /> WATCHING LIVE
+                         </div>
+                     ) : gameMode === 'replay' ? (
+                         <>
+                            <button onClick={() => stepReplay(-1)} className="flex-1 py-3 bg-slate-800 rounded-lg text-white"><ChevronLeft className="w-5 h-5 mx-auto"/></button>
+                            <button onClick={() => setIsPlaying(!isPlaying)} className={`flex-1 py-3 rounded-lg text-white ${isPlaying ? 'bg-amber-500' : 'bg-cyan-600'}`}>{isPlaying ? <Pause className="w-5 h-5 mx-auto"/> : <Play className="w-5 h-5 mx-auto"/></button>
+                            <button onClick={() => stepReplay(1)} className="flex-1 py-3 bg-slate-800 rounded-lg text-white"><Play className="w-5 h-5 mx-auto"/></button>
+                         </>
+                     ) : (
+                         <>
+                            {gameMode === 'computer' && (
+                                 <button onClick={undoMove} className="flex-1 py-3 bg-slate-800 rounded-lg text-slate-400"><Undo2 className="w-5 h-5 mx-auto"/></button>
+                            )}
+                            
+                            {(gameMode === 'computer' || gameMode === 'online') && (
+                                 <button onClick={toggleStream} className={`flex-1 py-3 rounded-lg ${isStreaming ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
+                                     <Radio className="w-5 h-5 mx-auto" />
+                                 </button>
+                            )}
+
+                            {gameMode === 'online' ? (
+                                 <button onClick={() => setShowExitConfirm(true)} className="flex-1 py-3 bg-rose-900/30 text-rose-400 rounded-lg"><Flag className="w-5 h-5 mx-auto"/></button>
+                            ) : (
+                                 <button onClick={startNewGame} className="flex-1 py-3 bg-cyan-900/30 text-cyan-400 rounded-lg"><RefreshCw className="w-5 h-5 mx-auto"/></button>
+                            )}
+                         </>
+                     )}
+                 </div>
              </div>
         </div>
     </div>

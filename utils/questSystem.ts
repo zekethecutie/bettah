@@ -1,8 +1,6 @@
 
 import { Quest, User } from '../types';
 
-// Enhanced Quest & Leveling System (Lvl 1 - 100)
-
 const TIER_NAMES = [
     "Novice", "Apprentice", "Journeyman", "Adept", "Strategist", 
     "Tactician", "Master", "Grandmaster", "Legend", "Nexus Divinity"
@@ -14,7 +12,6 @@ export const getLevelTitle = (level: number) => {
 };
 
 export const getXpForNextLevel = (level: number) => {
-    // Exponential curve for 1-100 scaling
     return Math.floor(100 * Math.pow(level, 1.5));
 };
 
@@ -26,17 +23,16 @@ const createQuest = (
     const now = new Date();
     const expiresAt = new Date(now.setHours(23, 59, 59, 999)).toISOString();
     
-    // Logic for type selection
     const types: Quest['type'][] = ['play', 'win', 'capture', 'puzzle'];
     const type = typeOverride || types[Math.floor(Math.random() * types.length)];
     
     let title = '';
     let target = 1;
     let xp = 100;
+    let coins = 20;
     let difficulty: Quest['difficulty'] = 'medium';
     let description = '';
 
-    // Scaling Factors
     const scaler = Math.max(1, Math.floor(userLevel / 5));
 
     switch (type) {
@@ -44,6 +40,7 @@ const createQuest = (
             target = 1 + Math.floor(Math.random() * 2) * scaler;
             title = isBonus ? "Overtime: Play Matches" : "Daily Grind: Play Matches";
             xp = 50 * target;
+            coins = 10 * target;
             description = `Complete ${target} matches (win or loss).`;
             difficulty = 'easy';
             break;
@@ -51,6 +48,7 @@ const createQuest = (
             target = Math.max(1, Math.floor(scaler / 2));
             title = isBonus ? "Victory Lap: Win Games" : "Glory: Win Games";
             xp = 150 * target;
+            coins = 50 * target;
             description = `Defeat opponents in ${target} matches.`;
             difficulty = 'hard';
             break;
@@ -58,6 +56,7 @@ const createQuest = (
             target = 5 * scaler;
             title = "Hunter: Capture Pieces";
             xp = 10 * target;
+            coins = 5 * target;
             description = `Capture ${target} enemy pieces in total.`;
             difficulty = 'medium';
             break;
@@ -65,26 +64,25 @@ const createQuest = (
             target = Math.max(1, Math.floor(scaler / 3));
             title = "Sharp Mind: Academy";
             xp = 100 * target;
+            coins = 30 * target;
             description = `Complete ${target} lessons in the Academy.`;
             difficulty = 'easy';
             break;
     }
 
     if (isBonus) {
-        xp = Math.floor(xp * 1.5); // 50% more XP for bonus quests
+        xp = Math.floor(xp * 1.5); 
+        coins = Math.floor(coins * 2);
         title = "BONUS: " + title;
-        description += " (1.5x XP)";
+        description += " (1.5x XP, 2x Coins)";
     }
 
     return {
         id: Math.random().toString(36).substr(2, 9),
-        title,
-        description,
-        type,
-        target,
-        progress: 0,
+        title, description, type, target, progress: 0,
         rewardXp: xp,
-        penaltyXp: 0, // No penalty for bonus quests usually
+        rewardCoins: coins,
+        penaltyXp: 0,
         expiresAt,
         completed: false,
         difficulty,
@@ -94,28 +92,22 @@ const createQuest = (
 
 export const generateDailyQuests = (userLevel: number): Quest[] => {
     const quests: Quest[] = [];
-    // Generate 3 distinct types if possible
     const types: Quest['type'][] = ['play', 'win', 'puzzle'];
-    
     types.forEach(t => {
         quests.push(createQuest(userLevel, t, false));
     });
-
     return quests;
 };
 
 export const checkQuestProgress = (user: User, eventType: Quest['type'], amount: number = 1): User => {
     let updatedUser = { ...user };
     let xpGained = 0;
+    let coinsGained = 0;
     let anyCompletedNow = false;
 
     const newQuests = updatedUser.activeQuests.map(q => {
         if (q.completed || q.type !== eventType) return q;
-        
-        // Check expiry (skip if expired)
-        if (new Date(q.expiresAt).getTime() < Date.now()) {
-            return q;
-        }
+        if (new Date(q.expiresAt).getTime() < Date.now()) return q;
 
         const newProgress = Math.min(q.target, q.progress + amount);
         const isJustCompleted = newProgress >= q.target && q.progress < q.target;
@@ -123,35 +115,30 @@ export const checkQuestProgress = (user: User, eventType: Quest['type'], amount:
         if (isJustCompleted) {
             anyCompletedNow = true;
             xpGained += q.rewardXp;
-            // Streak Multiplier
+            coinsGained += q.rewardCoins;
             const streakBonus = 1 + (Math.min(user.streak, 10) * 0.1); 
             xpGained = Math.floor(xpGained * streakBonus);
             
             return { ...q, progress: newProgress, completed: true };
         }
-        
         return { ...q, progress: newProgress };
     });
 
     updatedUser.activeQuests = newQuests;
     updatedUser.xp += xpGained;
+    updatedUser.coins += coinsGained;
 
-    // --- AUTO REFILL SYSTEM ---
-    // If all quests are completed, generate 1 Bonus Quest
     const allCompleted = updatedUser.activeQuests.every(q => q.completed);
     if (allCompleted && anyCompletedNow) {
-        // Generate a random bonus quest
         const bonusQuest = createQuest(updatedUser.level, undefined, true);
         updatedUser.activeQuests.push(bonusQuest);
-        // We could return a notification here in a real app state, 
-        // but for now, the UI will just show the new quest.
     }
 
-    // Check Level Up Loop
     let nextLevelXp = getXpForNextLevel(updatedUser.level);
     while (updatedUser.xp >= nextLevelXp && updatedUser.level < 100) {
         updatedUser.xp -= nextLevelXp;
         updatedUser.level += 1;
+        updatedUser.coins += 100; // Level Up Bonus
         nextLevelXp = getXpForNextLevel(updatedUser.level);
     }
 
@@ -167,20 +154,16 @@ export const handleDailyLogin = (user: User): { user: User, notification?: strin
     const isSameDay = now.toDateString() === lastLogin.toDateString();
     const isNextDay = (now.getTime() - lastLogin.getTime()) < (48 * 60 * 60 * 1000) && !isSameDay;
 
-    // Streak Logic
     if (isNextDay) {
         updatedUser.streak += 1;
-        notification = `Streak continued! ${updatedUser.streak} days 🔥 (XP Boost Active)`;
+        notification = `Streak continued! ${updatedUser.streak} days 🔥 (+50 Coins)`;
+        updatedUser.coins += 50;
     } else if (!isSameDay) {
         if (updatedUser.streak > 0) notification = "Streak lost! Login daily to maintain XP boost.";
         updatedUser.streak = 1; 
     }
 
-    // Quest Expiry Logic
-    // Filter out expired quests or reset them
     const validQuests = updatedUser.activeQuests.filter(q => new Date(q.expiresAt).getTime() > now.getTime());
-    
-    // Calculate penalty for expired uncompleted quests
     let penaltyTotal = 0;
     updatedUser.activeQuests.forEach(q => {
         if (!q.completed && new Date(q.expiresAt).getTime() < now.getTime() && !q.isBonus) {
@@ -190,16 +173,13 @@ export const handleDailyLogin = (user: User): { user: User, notification?: strin
 
     if (penaltyTotal > 0) {
         updatedUser.xp = Math.max(0, updatedUser.xp - penaltyTotal);
-        notification = notification ? `${notification} | -${penaltyTotal} XP (Expired Tasks)` : `-${penaltyTotal} XP (Expired Tasks)`;
+        notification = notification ? `${notification} | -${penaltyTotal} XP` : `-${penaltyTotal} XP`;
     }
 
-    // If we have very few valid quests (e.g. new day), generate new ones
-    // Or if it's a new day entirely, refresh the set
     if (!isSameDay) {
         updatedUser.activeQuests = generateDailyQuests(updatedUser.level);
     } else {
         updatedUser.activeQuests = validQuests;
-        // If user managed to clear everything and they expired same day (unlikely but possible), give one
         if (updatedUser.activeQuests.length === 0) {
              updatedUser.activeQuests = generateDailyQuests(updatedUser.level);
         }

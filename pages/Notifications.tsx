@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, X, Clock, Gamepad2, Trash2 } from 'lucide-react';
@@ -46,7 +45,6 @@ const Notifications: React.FC<NotificationsProps> = ({ onAcceptGame }) => {
       }
 
       // Convert notification sender to User object structure for game start
-      // Note: In real app we fetch full user details, here we construct minimal valid object
       const opponent: User = {
           id: notif.fromUser.id,
           username: notif.fromUser.username,
@@ -60,7 +58,9 @@ const Notifications: React.FC<NotificationsProps> = ({ onAcceptGame }) => {
           stats: { wins:0, losses:0, draws:0 },
           followers: [],
           following: [],
-          level: 1, xp: 0, streak: 0, lastLoginDate: new Date().toISOString(), activeQuests: [], completedLessons: []
+          level: 1, xp: 0, streak: 0, lastLoginDate: new Date().toISOString(), activeQuests: [], completedLessons: [],
+          coins: 0,
+          inventory: { ownedItems: [], equipped: { boardTheme: 'board_classic', pieceSet: 'pieces_standard' } }
       };
 
       UserManager.deleteNotification(notif.id);
@@ -68,7 +68,7 @@ const Notifications: React.FC<NotificationsProps> = ({ onAcceptGame }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 lg:p-8 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto p-4 lg:p-8 animate-in fade-in duration-500 pb-28 lg:pb-8">
         <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
                 <Bell className="w-6 h-6 text-cyan-400" />
@@ -98,50 +98,54 @@ const Notifications: React.FC<NotificationsProps> = ({ onAcceptGame }) => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, x: -50 }}
-                                className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${
+                                className={`p-4 rounded-2xl border flex flex-col md:flex-row items-start gap-4 transition-all ${
                                     notif.read ? 'bg-slate-900/30 border-slate-800' : 'bg-slate-900 border-cyan-900/50 shadow-lg'
                                 }`}
                             >
-                                <div className={`mt-1 p-2 rounded-lg ${isInvite ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>
-                                    {isInvite ? <Gamepad2 className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-                                </div>
-                                
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="font-bold text-white text-lg">{notif.title}</h3>
-                                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-                                        </span>
+                                <div className="flex items-start gap-4 w-full">
+                                    <div className={`mt-1 p-2 rounded-lg shrink-0 ${isInvite ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>
+                                        {isInvite ? <Gamepad2 className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
                                     </div>
-                                    <p className="text-slate-400 text-sm mt-1">{notif.content}</p>
                                     
-                                    {isInvite && !isExpired && (
-                                        <div className="flex gap-3 mt-4">
-                                            <button 
-                                                onClick={() => handleAcceptInvite(notif)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-emerald-900/20"
-                                            >
-                                                <Check className="w-4 h-4" /> Accept Challenge
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDelete(notif.id)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-rose-900/30 hover:text-rose-400 text-slate-300 text-sm font-bold rounded-lg transition-colors border border-slate-700 hover:border-rose-500/30"
-                                            >
-                                                <X className="w-4 h-4" /> Decline
-                                            </button>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start">
+                                            <h3 className="font-bold text-white text-lg truncate pr-2">{notif.title}</h3>
+                                            <span className="text-xs text-slate-500 flex items-center gap-1 shrink-0">
+                                                <Clock className="w-3 h-3" />
+                                                {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                            </span>
                                         </div>
-                                    )}
-                                    {isInvite && isExpired && (
-                                        <div className="mt-2 text-xs text-rose-500 font-bold bg-rose-900/10 inline-block px-2 py-1 rounded">
-                                            Invitation Expired
-                                        </div>
-                                    )}
+                                        <p className="text-slate-400 text-sm mt-1 break-words">{notif.content}</p>
+                                        
+                                        {isInvite && !isExpired && (
+                                            <div className="flex flex-wrap gap-3 mt-4">
+                                                <button 
+                                                    onClick={() => handleAcceptInvite(notif)}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-emerald-900/20"
+                                                >
+                                                    <Check className="w-4 h-4" /> Accept
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(notif.id)}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-rose-900/30 hover:text-rose-400 text-slate-300 text-sm font-bold rounded-lg transition-colors border border-slate-700 hover:border-rose-500/30"
+                                                >
+                                                    <X className="w-4 h-4" /> Decline
+                                                </button>
+                                            </div>
+                                        )}
+                                        {isInvite && isExpired && (
+                                            <div className="mt-2 text-xs text-rose-500 font-bold bg-rose-900/10 inline-block px-2 py-1 rounded">
+                                                Invitation Expired
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <button onClick={() => handleDelete(notif.id)} className="text-slate-600 hover:text-rose-400 p-2">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="w-full md:w-auto flex justify-end">
+                                    <button onClick={() => handleDelete(notif.id)} className="text-slate-600 hover:text-rose-400 p-2" title="Delete">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </motion.div>
                         );
                     })}
