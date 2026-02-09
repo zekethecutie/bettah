@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Swords, Shield } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Pages & Components
 import Auth from './pages/Auth';
@@ -17,7 +17,10 @@ import ChatDrawer from './components/ChatDrawer';
 import Landing from './pages/Landing'; 
 import Learn from './pages/Learn'; 
 import Leaderboard from './pages/Leaderboard'; 
-import Docs from './pages/Docs'; // New Page
+import Docs from './pages/Docs'; 
+import Shop from './pages/Shop';
+import Pulse from './pages/Pulse';
+
 import { UserManager } from './utils/storage';
 import { User, Friend, MatchRecord } from './types';
 
@@ -54,20 +57,29 @@ const GlobalChessDefs = () => (
   </svg>
 );
 
-type Screen = 'landing' | 'auth' | 'home' | 'game' | 'profile' | 'social' | 'post_view' | 'notifications' | 'rules' | 'privacy' | 'terms' | 'learn' | 'leaderboard' | 'docs';
+// Wrapper for screens to apply consistent layout
+const ScreenWrapper = ({ children, noPadding = false }: { children: React.ReactNode, noPadding?: boolean }) => (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className={`w-full h-full ${noPadding ? '' : ''}`}
+    >
+        {children}
+    </motion.div>
+);
 
-function App() {
-  const [screen, setScreen] = useState<Screen>('landing');
+const AppContent = () => {
   const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   
-  // Navigation State
+  // Interaction State
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [viewedUser, setViewedUser] = useState<User | null>(null);
-  
-  // Chat State
   const [activeChatFriend, setActiveChatFriend] = useState<Friend | null>(null);
 
-  // Game Config State
+  // Game Config State (Managed here to pass to GamePage)
   const [gameConfig, setGameConfig] = useState<{
       mode: 'human' | 'computer' | 'replay' | 'online' | 'spectator';
       difficulty?: 'easy' | 'medium' | 'hard';
@@ -81,19 +93,21 @@ function App() {
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
         setUser(currentUser);
-        setScreen('home');
+        if (location.pathname === '/' || location.pathname === '/auth') {
+            navigate('/home');
+        }
     }
   }, []);
 
   const handleLogin = (u: any) => {
     setUser(u);
-    setScreen('home');
+    navigate('/home');
   };
 
   const handleLogout = () => {
     UserManager.logout();
     setUser(null);
-    setScreen('landing');
+    navigate('/');
   };
 
   const startGame = (
@@ -103,36 +117,25 @@ function App() {
       playerColor: 'w' | 'b' | 'random' = 'w'
   ) => {
       setGameConfig({ mode, difficulty, opponent, playerColor });
-      setScreen('game');
+      navigate('/game');
   };
 
   const startReplay = (match: MatchRecord) => {
       setGameConfig({ mode: 'replay', replayMatch: match });
-      setScreen('game');
-  };
-
-  const viewPost = (postId: string) => {
-      setCurrentPostId(postId);
-      setScreen('post_view');
+      navigate('/game');
   };
 
   const handleViewProfile = (targetUser: User) => {
-      // If viewing self, ensure we use fresh data from storage to avoid stale state
       if (targetUser.id === user?.id) {
-          handleMyProfile();
+          setViewedUser(null);
+          navigate('/profile');
       } else {
           setViewedUser(targetUser);
-          setScreen('profile');
+          navigate('/profile');
       }
   };
 
-  const handleMyProfile = () => {
-      setViewedUser(null); // Null implies current user
-      setScreen('profile');
-  };
-
   const handleAcceptInvite = (opponent: User) => {
-      // Direct access to Game with Online mode
       startGame('online', undefined, opponent, 'random');
   };
 
@@ -140,160 +143,123 @@ function App() {
     <div className="min-h-screen bg-[#020617] text-white flex overflow-hidden relative font-sans selection:bg-cyan-500/30">
       <GlobalChessDefs />
 
-      {/* Ambient Background - only show if not in landing (Landing has its own) */}
-      {screen !== 'landing' && (
+      {/* Ambient Background */}
+      {location.pathname !== '/' && location.pathname !== '/game' && location.pathname !== '/pulse' && (
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
             <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-indigo-900/10 rounded-full blur-[120px] animate-pulse" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-cyan-900/10 rounded-full blur-[120px]" />
         </div>
       )}
 
-      {screen === 'landing' ? (
-          <Landing 
-            onGetStarted={() => setScreen('auth')}
-            onSignIn={() => setScreen('auth')} 
+      {/* Sidebar Navigation */}
+      {user && location.pathname !== '/game' && location.pathname !== '/pulse' && (
+          <Navigation 
+              onLogout={handleLogout}
+              user={user}
           />
-      ) : screen === 'auth' ? (
-          <Auth onLogin={handleLogin} />
-      ) : (
-          <>
-            {/* Sidebar Navigation - Hidden on Game Screen for focus */}
-            {screen !== 'game' && (
-                <Navigation 
-                    currentScreen={screen === 'post_view' ? 'social' : screen} 
-                    setScreen={(s: Screen) => {
-                        if (s === 'profile') handleMyProfile();
-                        else setScreen(s);
-                    }} 
-                    onLogout={handleLogout}
-                    user={user}
-                />
-            )}
-
-            {/* Main Content Area */}
-            <main className={`flex-1 relative z-10 h-screen overflow-y-auto ${screen !== 'game' ? 'lg:pl-64' : ''}`}>
-                <AnimatePresence mode="wait">
-                    {screen === 'home' && (
-                        <motion.div 
-                            key="home"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="w-full h-full"
-                        >
-                            <Home onStartGame={startGame} onViewProfile={handleViewProfile} />
-                        </motion.div>
-                    )}
-
-                    {screen === 'learn' && (
-                        <motion.div 
-                            key="learn"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="w-full h-full"
-                        >
-                            <Learn />
-                        </motion.div>
-                    )}
-
-                    {screen === 'leaderboard' && (
-                        <motion.div 
-                            key="leaderboard"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="w-full h-full"
-                        >
-                            <Leaderboard onViewProfile={handleViewProfile} />
-                        </motion.div>
-                    )}
-
-                    {screen === 'docs' && (
-                        <motion.div 
-                            key="docs"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="w-full h-full"
-                        >
-                            <Docs />
-                        </motion.div>
-                    )}
-
-                    {screen === 'profile' && user && (
-                        <motion.div key="profile" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <Profile 
-                                user={viewedUser || user} 
-                                isCurrentUser={!viewedUser || viewedUser.id === user.id}
-                                onReplayGame={startReplay} 
-                            />
-                        </motion.div>
-                    )}
-
-                    {screen === 'notifications' && (
-                        <motion.div key="notifications" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <Notifications onAcceptGame={handleAcceptInvite} />
-                        </motion.div>
-                    )}
-
-                    {screen === 'social' && (
-                        <motion.div key="social" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <Social 
-                                onViewPost={viewPost} 
-                                onChatStart={(friend) => setActiveChatFriend(friend)} 
-                                onViewProfile={handleViewProfile}
-                            />
-                        </motion.div>
-                    )}
-
-                    {screen === 'post_view' && currentPostId && (
-                        <motion.div key="post_view" initial={{opacity: 0, x: 20}} animate={{opacity: 1, x: 0}} exit={{opacity: 0, x: 20}}>
-                            <PostView postId={currentPostId} onBack={() => setScreen('social')} />
-                        </motion.div>
-                    )}
-
-                    {screen === 'game' && (
-                        <motion.div key="game" className="h-full" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <GamePage 
-                                gameMode={gameConfig.mode} 
-                                difficulty={gameConfig.difficulty}
-                                replayMatch={gameConfig.replayMatch}
-                                opponent={gameConfig.opponent}
-                                playerColor={gameConfig.playerColor}
-                                onExit={() => setScreen('home')}
-                            />
-                        </motion.div>
-                    )}
-
-                    {/* Legal Pages */}
-                    {(screen === 'rules' || screen === 'privacy' || screen === 'terms') && (
-                        <motion.div key="legal" className="h-full" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                           <Legal section={screen} onBack={() => setScreen('home')} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                
-                {/* Footer Links (Only on Home) */}
-                {screen === 'home' && (
-                    <div className="absolute bottom-4 right-8 flex gap-4 text-xs text-slate-600">
-                        <button onClick={() => setScreen('rules')} className="hover:text-cyan-400">Rules</button>
-                        <button onClick={() => setScreen('privacy')} className="hover:text-cyan-400">Privacy</button>
-                        <button onClick={() => setScreen('terms')} className="hover:text-cyan-400">Terms</button>
-                    </div>
-                )}
-            </main>
-
-            {/* Chat Drawer Overlay */}
-            <ChatDrawer 
-                friend={activeChatFriend} 
-                onClose={() => setActiveChatFriend(null)} 
-            />
-
-          </>
       )}
+
+      {/* Main Content Area */}
+      <main className={`flex-1 relative z-10 h-screen overflow-y-auto ${user && location.pathname !== '/game' && location.pathname !== '/pulse' ? 'lg:pl-64' : ''}`}>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<Landing onGetStarted={() => navigate('/auth')} onSignIn={() => navigate('/auth')} />} />
+                <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
+                
+                <Route path="/home" element={
+                    <ScreenWrapper><Home onStartGame={startGame} onViewProfile={handleViewProfile} /></ScreenWrapper>
+                } />
+                
+                <Route path="/shop" element={
+                    <ScreenWrapper><Shop /></ScreenWrapper>
+                } />
+
+                <Route path="/learn" element={
+                    <ScreenWrapper><Learn /></ScreenWrapper>
+                } />
+
+                <Route path="/leaderboard" element={
+                    <ScreenWrapper><Leaderboard onViewProfile={handleViewProfile} /></ScreenWrapper>
+                } />
+
+                <Route path="/docs" element={
+                    <ScreenWrapper><Docs /></ScreenWrapper>
+                } />
+
+                <Route path="/profile" element={
+                    <ScreenWrapper><Profile user={viewedUser || user} isCurrentUser={!viewedUser} onReplayGame={startReplay} /></ScreenWrapper>
+                } />
+
+                <Route path="/notifications" element={
+                    <ScreenWrapper><Notifications onAcceptGame={handleAcceptInvite} /></ScreenWrapper>
+                } />
+
+                <Route path="/social" element={
+                    <ScreenWrapper>
+                        <Social 
+                            onViewPost={(id) => { setCurrentPostId(id); navigate(`/post/${id}`); }} 
+                            onChatStart={(friend) => setActiveChatFriend(friend)} 
+                            onViewProfile={handleViewProfile}
+                        />
+                    </ScreenWrapper>
+                } />
+
+                <Route path="/post/:id" element={
+                    <ScreenWrapper>
+                        <PostView postId={currentPostId || location.pathname.split('/').pop() || ''} onBack={() => navigate('/social')} />
+                    </ScreenWrapper>
+                } />
+
+                <Route path="/legal/:section" element={
+                    <ScreenWrapper><Legal section={location.pathname.split('/').pop() as any} onBack={() => navigate('/home')} /></ScreenWrapper>
+                } />
+
+                {/* Game Modes */}
+                <Route path="/game" element={
+                    <ScreenWrapper noPadding>
+                        <GamePage 
+                            gameMode={gameConfig.mode} 
+                            difficulty={gameConfig.difficulty}
+                            replayMatch={gameConfig.replayMatch}
+                            opponent={gameConfig.opponent}
+                            playerColor={gameConfig.playerColor}
+                            onExit={() => navigate('/home')}
+                        />
+                    </ScreenWrapper>
+                } />
+
+                <Route path="/pulse-intro" element={
+                    <ScreenWrapper noPadding><Pulse /></ScreenWrapper>
+                } />
+
+            </Routes>
+          </AnimatePresence>
+          
+          {/* Footer Links (Only on Home) */}
+          {location.pathname === '/home' && (
+              <div className="absolute bottom-4 right-8 flex gap-4 text-xs text-slate-600">
+                  <button onClick={() => navigate('/legal/rules')} className="hover:text-cyan-400">Rules</button>
+                  <button onClick={() => navigate('/legal/privacy')} className="hover:text-cyan-400">Privacy</button>
+                  <button onClick={() => navigate('/legal/terms')} className="hover:text-cyan-400">Terms</button>
+              </div>
+          )}
+      </main>
+
+      {/* Chat Drawer Overlay */}
+      <ChatDrawer 
+          friend={activeChatFriend} 
+          onClose={() => setActiveChatFriend(null)} 
+      />
     </div>
   );
+};
+
+const App = () => {
+    return (
+        <BrowserRouter>
+            <AppContent />
+        </BrowserRouter>
+    );
 }
 
 export default App;

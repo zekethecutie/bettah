@@ -129,8 +129,10 @@ const Navigation: React.FC<NavigationProps> = ({ onLogout, user }) => {
                  <NavItem isMobile icon={Home} label="Home" path="/home" />
                  <NavItem isMobile icon={Activity} label="Pulse" path="/pulse-intro" />
                  <NavItem isMobile icon={GraduationCap} label="Learn" path="/learn" />
+                 <NavItem isMobile icon={Book} label="Guide" path="/docs" />
                  <NavItem isMobile icon={ShoppingBag} label="Shop" path="/shop" />
                  <NavItem isMobile icon={Trophy} label="Rank" path="/leaderboard" />
+                 <NavItem isMobile icon={Users} label="Social" path="/social" />
                  <NavItem isMobile icon={Bell} label="Alerts" path="/notifications" badge={unreadCount} />
                  <NavItem isMobile icon={User} label="Profile" path="/profile" />
              </div>
