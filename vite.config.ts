@@ -6,9 +6,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0', // Critical for Replit to expose the server
+    host: '0.0.0.0',
     hmr: {
-        clientPort: 443 // Ensures Hot Module Replacement works through Replit's proxy
+        clientPort: 443
     }
   }
 })

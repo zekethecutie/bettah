@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Pages & Components
@@ -23,6 +23,7 @@ import Pulse from './pages/Pulse';
 
 import { UserManager } from './utils/storage';
 import { User, Friend, MatchRecord } from './types';
+import { getItem } from './utils/shopData';
 
 // Global Styles & Defs
 const GlobalChessDefs = () => (
@@ -58,7 +59,7 @@ const GlobalChessDefs = () => (
 );
 
 // Wrapper for screens to apply consistent layout
-const ScreenWrapper = ({ children, noPadding = false }: { children: React.ReactNode, noPadding?: boolean }) => (
+const ScreenWrapper = ({ children, noPadding = false }: { children?: React.ReactNode, noPadding?: boolean }) => (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -79,7 +80,7 @@ const AppContent = () => {
   const [viewedUser, setViewedUser] = useState<User | null>(null);
   const [activeChatFriend, setActiveChatFriend] = useState<Friend | null>(null);
 
-  // Game Config State (Managed here to pass to GamePage)
+  // Game Config State
   const [gameConfig, setGameConfig] = useState<{
       mode: 'human' | 'computer' | 'replay' | 'online' | 'spectator';
       difficulty?: 'easy' | 'medium' | 'hard';
@@ -88,16 +89,30 @@ const AppContent = () => {
       playerColor?: 'w' | 'b' | 'random';
   }>({ mode: 'human' });
 
+  // Theme Config
+  const [themeConfig, setThemeConfig] = useState<any>({});
+
   // Init Auth Check
   useEffect(() => {
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
         setUser(currentUser);
+        // Redirect to home if on landing or auth page while logged in
         if (location.pathname === '/' || location.pathname === '/auth') {
             navigate('/home');
         }
     }
-  }, []);
+  }, []); 
+
+  // Watch for theme changes and apply global variables
+  useEffect(() => {
+      if (user && user.inventory?.equipped?.boardTheme) {
+          const item = getItem(user.inventory.equipped.boardTheme);
+          if (item && item.config) {
+              setThemeConfig(item.config);
+          }
+      }
+  }, [user?.inventory?.equipped?.boardTheme]);
 
   const handleLogin = (u: any) => {
     setUser(u);
@@ -139,17 +154,25 @@ const AppContent = () => {
       startGame('online', undefined, opponent, 'random');
   };
 
-  return (
-    <div className="min-h-screen bg-[#020617] text-white flex overflow-hidden relative font-sans selection:bg-cyan-500/30">
-      <GlobalChessDefs />
+  // --- GLOBAL THEME INJECTION ---
+  const cssVars = {
+      '--app-bg': themeConfig.appBg || '#020617',
+      '--panel-bg': themeConfig.panelBg || 'rgba(15, 23, 42, 0.6)',
+      '--element-bg': themeConfig.elementBg || 'rgba(30, 41, 59, 0.8)',
+      '--border-color': themeConfig.borderColor || 'rgba(51, 65, 85, 0.5)',
+      '--text-main': themeConfig.textColor || '#ffffff',
+      '--text-muted': themeConfig.textMuted || '#94a3b8',
+      '--primary': themeConfig.accentColor || '#22d3ee',
+      '--primary-dim': themeConfig.accentColor ? `${themeConfig.accentColor}33` : 'rgba(34, 211, 238, 0.2)',
+      '--sidebar-bg': themeConfig.sidebarBg || 'rgba(2, 6, 23, 0.8)',
+  } as React.CSSProperties;
 
-      {/* Ambient Background */}
-      {location.pathname !== '/' && location.pathname !== '/game' && location.pathname !== '/pulse' && (
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-            <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-indigo-900/10 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-cyan-900/10 rounded-full blur-[120px]" />
-        </div>
-      )}
+  return (
+    <div 
+        className="min-h-screen h-full w-full flex overflow-hidden relative font-sans selection:bg-[var(--primary-dim)] transition-colors duration-500"
+        style={{ ...cssVars, backgroundColor: 'var(--app-bg)', color: 'var(--text-main)' }}
+    >
+      <GlobalChessDefs />
 
       {/* Sidebar Navigation */}
       {user && location.pathname !== '/game' && location.pathname !== '/pulse' && (
@@ -160,7 +183,7 @@ const AppContent = () => {
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 relative z-10 h-screen overflow-y-auto ${user && location.pathname !== '/game' && location.pathname !== '/pulse' ? 'lg:pl-64' : ''}`}>
+      <main className={`flex-1 relative z-10 h-full overflow-y-auto ${user && location.pathname !== '/game' && location.pathname !== '/pulse' ? 'lg:pl-64' : ''}`}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
                 <Route path="/" element={<Landing onGetStarted={() => navigate('/auth')} onSignIn={() => navigate('/auth')} />} />
@@ -232,15 +255,18 @@ const AppContent = () => {
                     <ScreenWrapper noPadding><Pulse /></ScreenWrapper>
                 } />
 
+                {/* Catch-all for unknown routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
           </AnimatePresence>
           
           {/* Footer Links (Only on Home) */}
           {location.pathname === '/home' && (
-              <div className="absolute bottom-4 right-8 flex gap-4 text-xs text-slate-600">
-                  <button onClick={() => navigate('/legal/rules')} className="hover:text-cyan-400">Rules</button>
-                  <button onClick={() => navigate('/legal/privacy')} className="hover:text-cyan-400">Privacy</button>
-                  <button onClick={() => navigate('/legal/terms')} className="hover:text-cyan-400">Terms</button>
+              <div className="absolute bottom-4 right-8 flex gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <button onClick={() => navigate('/legal/rules')} className="hover:text-[var(--primary)]">Rules</button>
+                  <button onClick={() => navigate('/legal/privacy')} className="hover:text-[var(--primary)]">Privacy</button>
+                  <button onClick={() => navigate('/legal/terms')} className="hover:text-[var(--primary)]">Terms</button>
               </div>
           )}
       </main>
@@ -256,9 +282,9 @@ const AppContent = () => {
 
 const App = () => {
     return (
-        <BrowserRouter>
+        <HashRouter>
             <AppContent />
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 

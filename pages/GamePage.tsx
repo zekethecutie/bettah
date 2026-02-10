@@ -27,6 +27,7 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const [boardOrientation, setBoardOrientation] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [notification, setNotification] = useState<{ type: string, message: string } | null>(null);
+  const isMounted = useRef(true);
   
   // Streaming State
   const [isStreaming, setIsStreaming] = useState(false);
@@ -64,16 +65,19 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const [whiteUser, setWhiteUser] = useState<User | undefined>(undefined);
   const [blackUser, setBlackUser] = useState<User | undefined>(undefined);
 
+  useEffect(() => {
+      isMounted.current = true;
+      return () => { isMounted.current = false; };
+  }, []);
+
   // Initialize Game & Users
   useEffect(() => {
     if (gameMode === 'spectator') {
-        // Mock Spectator Setup
         setWhiteUser({ ...currentUser!, username: 'GrandmasterGary', elo: 2800, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gary' });
         setBlackUser({ ...currentUser!, username: 'DeepBlue', elo: 3000, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Blue' });
         startNewGame();
-        setIsPlaying(true); // Start AI vs AI loop
+        setIsPlaying(true); 
     } else if (gameMode === 'replay' && replayMatch) {
-        // Accurate Replay Initialization
         try {
             const tempGame = new Chess();
             tempGame.loadPgn(replayMatch.pgn);
@@ -83,7 +87,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             setGame(cleanGame);
             setReplayStep(0);
 
-            // Set Orientation based on what the user played as
             const isUserWhite = replayMatch.playerSide === 'w';
             setUserSide(replayMatch.playerSide);
             setBoardOrientation(!isUserWhite);
@@ -109,7 +112,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             }
         } catch (e) { console.error("Replay Init Error", e); }
     } else {
-        // Standard Game Initialization
         let finalSide: 'w' | 'b' = 'w';
         if (gameMode === 'computer' || gameMode === 'online') {
             if (playerColor === 'random') {
@@ -119,9 +121,8 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             }
         }
         setUserSide(finalSide);
-        setBoardOrientation(finalSide === 'b'); // Flip if Black
+        setBoardOrientation(finalSide === 'b'); 
 
-        // Setup Players
         if (currentUser) {
             const opponentObj = opponent || { 
                 id: 'p2', 
@@ -187,6 +188,7 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
     let animationFrameId: number;
     
     const updateTimer = () => {
+        if (!isMounted.current) return;
         if (gameMode !== 'replay' && !gameOverData) {
             const now = Date.now();
             const delta = now - lastTimeRef.current;
@@ -253,17 +255,19 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             const vodTitle = wasStreaming ? `Live Stream vs ${opponentName}` : undefined;
 
             setTimeout(() => {
-                UserManager.saveMatch({
-                    date: new Date().toISOString(),
-                    opponent: opponentName,
-                    opponentElo: (userSide === 'w' ? blackUser?.elo : whiteUser?.elo) || 1200,
-                    result, 
-                    pgn: game.pgn(),
-                    mode: gameMode === 'computer' ? 'computer' : 'rapid',
-                    playerSide: userSide,
-                    isStreamVod: wasStreaming,
-                    vodTitle
-                });
+                if (isMounted.current) {
+                    UserManager.saveMatch({
+                        date: new Date().toISOString(),
+                        opponent: opponentName,
+                        opponentElo: (userSide === 'w' ? blackUser?.elo : whiteUser?.elo) || 1200,
+                        result, 
+                        pgn: game.pgn(),
+                        mode: gameMode === 'computer' ? 'computer' : 'rapid',
+                        playerSide: userSide,
+                        isStreamVod: wasStreaming,
+                        vodTitle
+                    });
+                }
             }, 1000);
         }
   };
@@ -340,11 +344,19 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
     if ((gameMode === 'computer' || gameMode === 'online') && game.turn() !== userSide) {
         const animationSafetyTimer = setTimeout(() => {
             const makeAiMove = async () => {
+                if (!isMounted.current) return;
                 setIsAiThinking(true);
                 const diff = gameMode === 'online' ? 'hard' : difficulty;
-                const moveString = await getBestMove(game, diff as 'easy' | 'medium' | 'hard');
-                setIsAiThinking(false);
-                if (moveString) executeGameMove(moveString);
+                
+                try {
+                    const moveString = await getBestMove(game, diff as 'easy' | 'medium' | 'hard');
+                    if (!isMounted.current) return;
+                    setIsAiThinking(false);
+                    if (moveString) executeGameMove(moveString);
+                } catch (e) {
+                    // Catch potential errors from aborted promises
+                    if (isMounted.current) setIsAiThinking(false);
+                }
             };
             makeAiMove();
         }, 600);
@@ -355,7 +367,9 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         const makeSpectatorMove = async () => {
             const delay = Math.random() * 1000 + 500;
             setTimeout(async () => {
+                if (!isMounted.current) return;
                 const moveString = await getBestMove(game, 'hard'); 
+                if (!isMounted.current) return;
                 if (moveString) executeGameMove(moveString);
                 else setIsPlaying(false); 
             }, delay);
@@ -483,19 +497,14 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         </div>
 
         {/* --- MAIN AREA: BOARD + MOBILE CONTROLS --- */}
-        {/* We use flex-col for mobile. The board takes flex-1 but with min-h-0 to allow shrinking. */}
         <div className="flex-1 flex flex-col bg-[#020617] relative w-full h-full overflow-hidden">
             
-            {/* Board Container */}
             <div className="flex-1 flex flex-col justify-center items-center px-4 w-full min-h-0 relative">
                 
-                {/* Mobile: Opponent Info (Above Board) */}
                 <div className="lg:hidden w-full max-w-md pb-2 shrink-0">
                      <InfoPanel game={game} captured={captured} whiteTime={whiteTime} blackTime={blackTime} whiteUser={whiteUser} blackUser={blackUser} mobileMode="top" isReplay={gameMode === 'replay'} replayStep={replayStep} totalSteps={totalSteps} />
                 </div>
 
-                {/* The Board: Constrained by both width and height to fit in viewport */}
-                {/* The aspect-square ensures it stays square. max-h calculation prevents overlap. */}
                 <div className="w-full max-w-md aspect-square relative z-0 shrink-1" style={{ maxHeight: 'calc(100dvh - 240px)' }}> 
                     <Board 
                         game={game} 
@@ -508,22 +517,18 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                     />
                 </div>
 
-                {/* Mobile: Player Info (Below Board) */}
                 <div className="lg:hidden w-full max-w-md pt-2 shrink-0">
                      <InfoPanel game={game} captured={captured} whiteTime={whiteTime} blackTime={blackTime} whiteUser={whiteUser} blackUser={blackUser} mobileMode="bottom" isReplay={gameMode === 'replay'} replayStep={replayStep} totalSteps={totalSteps} />
                 </div>
             </div>
 
-            {/* Mobile: Bottom Controls (Fixed Height) */}
              <div className="lg:hidden w-full bg-slate-900 border-t border-slate-800 p-3 flex flex-col gap-2 shrink-0 safe-pb z-20">
-                 {/* Compact History Strip */}
                  <div className="h-8 bg-slate-950/50 rounded-lg overflow-x-auto whitespace-nowrap flex items-center px-2 border border-slate-800/50" ref={mobileHistoryRef}>
                     {simpleHistory.length === 0 ? <span className="text-[10px] text-slate-600">Game started...</span> : simpleHistory.map((move, i) => (
                         <span key={i} className="text-xs font-mono text-slate-400 mr-2">{i % 2 === 0 ? <span className="text-slate-600 mr-1">{(i/2)+1}.</span> : ''}<span className={i === simpleHistory.length - 1 ? "text-cyan-400 font-bold" : ""}>{move}</span></span>
                     ))}
                  </div>
 
-                 {/* Action Buttons */}
                  <div className="flex gap-2">
                      {gameMode === 'spectator' ? (
                          <div className="w-full text-center text-red-500 font-bold py-2 flex items-center justify-center gap-2 bg-red-900/10 rounded-lg border border-red-900/30">

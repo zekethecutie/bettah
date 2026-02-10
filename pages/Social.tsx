@@ -148,20 +148,28 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
-                <h1 className="text-3xl font-black text-white tracking-tighter">COMMUNITY</h1>
-                <p className="text-slate-400">Connect, Discuss, and Compete.</p>
+                <h1 className="text-3xl font-black tracking-tighter" style={{ color: 'var(--text-main)' }}>COMMUNITY</h1>
+                <p style={{ color: 'var(--text-muted)' }}>Connect, Discuss, and Compete.</p>
             </div>
             
-            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full md:w-auto">
+            <div className="flex p-1 rounded-xl border w-full md:w-auto" style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)' }}>
                 <button 
                     onClick={() => setActiveTab('friends')}
-                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'friends' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'friends' ? 'shadow' : 'hover:opacity-80'}`}
+                    style={{ 
+                        backgroundColor: activeTab === 'friends' ? 'var(--primary-dim)' : 'transparent',
+                        color: activeTab === 'friends' ? 'var(--primary)' : 'var(--text-muted)'
+                    }}
                 >
                     Friends
                 </button>
                 <button 
                     onClick={() => setActiveTab('forum')}
-                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'forum' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'forum' ? 'shadow' : 'hover:opacity-80'}`}
+                    style={{ 
+                        backgroundColor: activeTab === 'forum' ? 'var(--primary-dim)' : 'transparent',
+                        color: activeTab === 'forum' ? 'var(--primary)' : 'var(--text-muted)'
+                    }}
                 >
                     Forum
                 </button>
@@ -172,15 +180,16 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                     {/* Search Bar */}
-                    <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl relative z-20">
+                    <div className="border p-4 rounded-xl relative z-20" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}>
                         <div className="flex items-center gap-2">
-                            <Search className="w-5 h-5 text-slate-500" />
+                            <Search className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
                             <input 
                                 type="text" 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Find players by username..." 
-                                className="bg-transparent border-none outline-none text-white placeholder-slate-600 w-full"
+                                className="bg-transparent border-none outline-none w-full"
+                                style={{ color: 'var(--text-main)' }}
                             />
                         </div>
 
@@ -191,18 +200,20 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                    className="absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                    style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--border-color)' }}
                                 >
                                     {searchResults.map(user => (
                                         <div 
                                             key={user.id}
                                             onClick={() => handleUserClick(user)}
-                                            className="p-3 hover:bg-slate-800 cursor-pointer flex items-center gap-3 transition-colors border-b border-slate-800/50 last:border-0"
+                                            className="p-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors border-b last:border-0"
+                                            style={{ borderColor: 'var(--border-color)' }}
                                         >
                                             <img src={user.avatar} className="w-8 h-8 rounded-lg bg-slate-800" />
                                             <div>
-                                                <p className="text-white text-sm font-bold">{user.username}</p>
-                                                <p className="text-xs text-slate-500">ELO {user.elo}</p>
+                                                <p className="text-sm font-bold" style={{ color: 'var(--text-main)' }}>{user.username}</p>
+                                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>ELO {user.elo}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -211,13 +222,13 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                         </AnimatePresence>
                     </div>
 
-                    <div className="bg-slate-900/30 border border-slate-800 rounded-2xl overflow-hidden relative z-10">
-                        <div className="p-4 bg-slate-950/50 border-b border-slate-800">
-                            <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider">Your Friends</h3>
+                    <div className="border rounded-2xl overflow-hidden relative z-10" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}>
+                        <div className="p-4 border-b" style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)' }}>
+                            <h3 className="font-bold uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>Your Friends</h3>
                         </div>
-                        <div className="divide-y divide-slate-800/50">
+                        <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
                             {friends.length === 0 ? (
-                                <div className="p-8 text-center text-slate-500">
+                                <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>
                                     <p>No friends yet. Follow users to make friends!</p>
                                 </div>
                             ) : (
@@ -238,25 +249,27 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                                             };
                                             handleUserClick(u);
                                         }}
-                                        className="p-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors group cursor-pointer"
+                                        className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer border-b last:border-0"
+                                        style={{ borderColor: 'var(--border-color)' }}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="relative">
                                                 <img src={friend.avatar} alt={friend.username} className="w-10 h-10 rounded-lg bg-slate-800" />
-                                                <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-[#020617] rounded-full ${
+                                                <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 rounded-full ${
                                                     friend.status === 'online' ? 'bg-emerald-500' :
                                                     friend.status === 'in-game' ? 'bg-amber-500' : 'bg-slate-500'
-                                                }`} />
+                                                }`} style={{ borderColor: 'var(--panel-bg)' }} />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-white text-sm">{friend.username}</p>
-                                                <p className="text-xs text-slate-500 capitalize">{friend.status}</p>
+                                                <p className="font-bold text-sm" style={{ color: 'var(--text-main)' }}>{friend.username}</p>
+                                                <p className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>{friend.status}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); onChatStart(friend); }}
-                                                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-all opacity-0 group-hover:opacity-100" 
+                                                className="p-2 hover:bg-white/10 rounded-lg transition-all opacity-0 group-hover:opacity-100" 
+                                                style={{ color: 'var(--text-muted)' }}
                                                 title="Message"
                                             >
                                                 <MessageSquare className="w-4 h-4" />
@@ -269,7 +282,8 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                                             ) : (
                                                 <button 
                                                     onClick={(e) => handleInvite(e, friend.id)}
-                                                    className="p-2 hover:bg-cyan-500/20 rounded-lg text-cyan-400 hover:text-cyan-300 transition-all opacity-0 group-hover:opacity-100" 
+                                                    className="p-2 hover:bg-cyan-500/20 rounded-lg transition-all opacity-0 group-hover:opacity-100" 
+                                                    style={{ color: 'var(--primary)' }}
                                                     title="Challenge to Game"
                                                 >
                                                     <Gamepad2 className="w-4 h-4" />
@@ -284,21 +298,23 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-slate-900/30 border border-slate-800 p-6 rounded-2xl">
-                        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-4">Friend Activity</h3>
+                    <div className="border p-6 rounded-2xl" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}>
+                        <h3 className="font-bold uppercase text-xs tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>Friend Activity</h3>
                         <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
                             {activityFeed.length > 0 ? (
                                 activityFeed.map((act) => (
-                                    <div key={act.id} className="flex gap-3 text-sm border-b border-slate-800/50 pb-3 last:border-0 last:pb-0">
+                                    <div key={act.id} className="flex gap-3 text-sm border-b pb-3 last:border-0 last:pb-0" style={{ borderColor: 'var(--border-color)' }}>
                                         <img src={act.avatar} className="w-8 h-8 rounded-full bg-slate-800 shrink-0" />
                                         <div>
-                                            <p className="text-slate-300"><span className="font-bold text-white hover:text-cyan-400 cursor-pointer">{act.username}</span> {act.action}</p>
-                                            <p className="text-xs text-slate-600 mt-1">{act.time}</p>
+                                            <p style={{ color: 'var(--text-muted)' }}>
+                                                <span className="font-bold hover:underline cursor-pointer" style={{ color: 'var(--text-main)' }}>{act.username}</span> {act.action}
+                                            </p>
+                                            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>{act.time}</p>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-xs text-slate-600 italic">No recent activity.</p>
+                                <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>No recent activity.</p>
                             )}
                         </div>
                     </div>
@@ -309,10 +325,15 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                 {/* New Post Button */}
                 <button 
                     onClick={() => setShowNewPostModal(true)}
-                    className="w-full py-4 rounded-xl bg-slate-900/50 border border-slate-800 border-dashed text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2 mb-6 group"
+                    className="w-full py-4 rounded-xl border border-dashed transition-all flex items-center justify-center gap-2 mb-6 group"
+                    style={{ 
+                        backgroundColor: 'var(--panel-bg)', 
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-muted)'
+                    }}
                 >
-                    <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span className="font-bold">Start a Discussion</span>
+                    <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" style={{ color: 'var(--primary)' }} />
+                    <span className="font-bold group-hover:text-[var(--primary)]">Start a Discussion</span>
                 </button>
 
                 {/* Posts List */}
@@ -320,32 +341,33 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                     <div 
                         key={post.id} 
                         onClick={() => onViewPost && onViewPost(post.id)}
-                        className="p-6 bg-slate-900/30 border border-slate-800 rounded-2xl hover:bg-slate-900/50 transition-colors cursor-pointer group"
+                        className="p-6 border rounded-2xl hover:bg-white/5 transition-colors cursor-pointer group"
+                        style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}
                     >
                         <div className="flex items-start gap-4">
                              <div className="flex-col items-center gap-1 hidden md:flex">
                                 <button 
                                     onClick={(e) => handleLike(e, post.id)}
-                                    className={`p-1 hover:text-cyan-400 transition-colors ${post.likedBy.includes(currentUser?.id || '') ? 'text-cyan-400' : 'text-slate-500'}`}
+                                    className={`p-1 transition-colors ${post.likedBy.includes(currentUser?.id || '') ? 'text-cyan-400' : 'text-slate-500 hover:text-white'}`}
                                 >
                                     <div className="rotate-180">V</div>
                                 </button>
-                                <span className={`font-bold text-sm ${post.likedBy.includes(currentUser?.id || '') ? 'text-cyan-400' : 'text-white'}`}>{post.likes}</span>
+                                <span className={`font-bold text-sm ${post.likedBy.includes(currentUser?.id || '') ? 'text-cyan-400' : ''}`} style={{ color: post.likedBy.includes(currentUser?.id || '') ? 'var(--primary)' : 'var(--text-main)' }}>{post.likes}</span>
                                 <button className="p-1 text-slate-500 hover:text-rose-400">V</button>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                     <img src={post.authorAvatar} className="w-6 h-6 rounded-full bg-slate-800" />
-                                    <span className="text-xs font-bold text-slate-400">{post.authorName}</span>
-                                    <span className="text-xs text-slate-600">• {new Date(post.timestamp).toLocaleDateString()}</span>
+                                    <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{post.authorName}</span>
+                                    <span className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>• {new Date(post.timestamp).toLocaleDateString()}</span>
                                 </div>
-                                <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
+                                <h3 className="text-lg font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--text-main)' }}>
                                     {post.title}
                                 </h3>
-                                <p className="text-slate-400 text-sm mt-1 line-clamp-3">
+                                <p className="text-sm mt-1 line-clamp-3" style={{ color: 'var(--text-muted)' }}>
                                     {post.content}
                                 </p>
-                                <div className="flex items-center gap-4 mt-4 text-xs text-slate-500">
+                                <div className="flex items-center gap-4 mt-4 text-xs" style={{ color: 'var(--text-muted)' }}>
                                     <button className="flex items-center gap-1 hover:text-white transition-colors">
                                         <MessageCircle className="w-3 h-3" /> {post.comments} comments
                                     </button>
@@ -375,16 +397,18 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
                         initial={{ scale: 0.9, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-lg shadow-2xl relative"
+                        className="border p-6 rounded-2xl w-full max-w-lg shadow-2xl relative"
+                        style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--border-color)' }}
                     >
                         <button 
                             onClick={() => setShowNewPostModal(false)}
-                            className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                            className="absolute top-4 right-4 hover:text-white"
+                            style={{ color: 'var(--text-muted)' }}
                         >
                             <X className="w-5 h-5" />
                         </button>
-                        <h3 className="text-xl font-bold text-white mb-2">Create New Post</h3>
-                        <p className="text-xs text-slate-400 mb-6">Please follow our community guidelines. Posts are moderated.</p>
+                        <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-main)' }}>Create New Post</h3>
+                        <p className="text-xs mb-6" style={{ color: 'var(--text-muted)' }}>Please follow our community guidelines. Posts are moderated.</p>
                         
                         {moderationError && (
                             <div className="mb-4 p-3 bg-rose-900/30 border border-rose-500/50 rounded-lg flex items-center gap-2 text-rose-300 text-sm">
@@ -395,29 +419,32 @@ const Social: React.FC<SocialProps> = ({ onViewPost, onChatStart, onViewProfile 
 
                         <form onSubmit={handleCreatePost} className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Title</label>
+                                <label className="text-xs font-bold uppercase ml-1" style={{ color: 'var(--text-muted)' }}>Title</label>
                                 <input 
                                     type="text" 
                                     value={newPostTitle}
                                     onChange={(e) => setNewPostTitle(e.target.value)}
                                     placeholder="Interesting Gambit Idea..."
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-500 transition-colors mt-1"
+                                    className="w-full border rounded-xl py-3 px-4 focus:outline-none focus:border-cyan-500 transition-colors mt-1"
+                                    style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Content</label>
+                                <label className="text-xs font-bold uppercase ml-1" style={{ color: 'var(--text-muted)' }}>Content</label>
                                 <textarea 
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     placeholder="Share your thoughts..."
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-500 transition-colors mt-1 h-32 resize-none"
+                                    className="w-full border rounded-xl py-3 px-4 focus:outline-none focus:border-cyan-500 transition-colors mt-1 h-32 resize-none"
+                                    style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                                     required
                                 />
                             </div>
                             <button 
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-3 rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all flex items-center justify-center gap-2"
+                                className="w-full text-white font-bold py-3 rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all flex items-center justify-center gap-2"
+                                style={{ backgroundColor: 'var(--primary)' }}
                             >
                                 <Send className="w-4 h-4" /> Post
                             </button>

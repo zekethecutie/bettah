@@ -7,6 +7,7 @@ import { UserManager } from '../utils/storage';
 import ImageCropper from '../components/ImageCropper';
 import { getLevelTitle, getXpForNextLevel } from '../utils/questSystem';
 import { RankEmblem, getRankDetails } from '../utils/rankSystem';
+import { getItem } from '../utils/shopData';
 
 interface ProfileProps {
   user: User;
@@ -15,7 +16,7 @@ interface ProfileProps {
 }
 
 // Holographic Level Card
-const LevelCard = ({ user }: { user: User }) => {
+const LevelCard = ({ user, accentColor }: { user: User, accentColor?: string }) => {
     const xpNeeded = getXpForNextLevel(user.level);
     const progress = (user.xp / xpNeeded) * 100;
     const title = getLevelTitle(user.level);
@@ -23,17 +24,17 @@ const LevelCard = ({ user }: { user: User }) => {
 
     return (
         <div className="relative w-full md:w-80 h-48 rounded-2xl overflow-hidden group perspective-1000">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-black border border-slate-700 rounded-2xl shadow-2xl p-6 flex flex-col justify-between transform transition-transform duration-500 group-hover:scale-[1.02] group-hover:rotate-y-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-black border border-slate-700 rounded-2xl shadow-2xl p-6 flex flex-col justify-between transform transition-transform duration-500 group-hover:scale-[1.02] group-hover:rotate-y-6" style={{ borderColor: accentColor ? `${accentColor}40` : undefined }}>
                 
                 {/* Holographic Sheen */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundSize: '200% 200%' }} />
                 
                 <div className="flex justify-between items-start relative z-10">
                     <div>
-                        <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Nexus Rank</p>
+                        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accentColor || '#22d3ee' }}>Nexus Rank</p>
                         <h3 className="text-2xl font-black text-white italic tracking-tighter">{title}</h3>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-black text-white shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-black text-white shadow-[0_0_15px_rgba(0,0,0,0.3)]" style={{ borderColor: accentColor, boxShadow: accentColor ? `0 0 10px ${accentColor}40` : undefined }}>
                         {user.level}
                     </div>
                 </div>
@@ -67,7 +68,8 @@ const LevelCard = ({ user }: { user: User }) => {
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
-                            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                            className="h-full bg-white"
+                            style={{ backgroundColor: accentColor || '#22d3ee' }}
                         />
                     </div>
                 </div>
@@ -99,6 +101,9 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
   const [isFollowing, setIsFollowing] = useState(false);
   const [cropperState, setCropperState] = useState<{ src: string, type: 'avatar' | 'banner' } | null>(null);
   
+  // Theme Overrides from user inventory
+  const [themeConfig, setThemeConfig] = useState<any>({});
+
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +113,14 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
       setDisplayUser(user);
       if (currentUser && user.followers) {
           setIsFollowing(user.followers.includes(currentUser.id));
+      }
+      
+      // Calculate Profile Theme based on VIEWED user's equipment
+      if (user.inventory?.equipped?.boardTheme) {
+          const item = getItem(user.inventory.equipped.boardTheme);
+          if (item && item.config) {
+              setThemeConfig(item.config);
+          }
       }
   }, [user, currentUser?.id]);
   
@@ -167,8 +180,22 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
 
   const rankData = getRankDetails(displayUser.elo);
 
+  // Dynamic Styles
+  const accentColor = themeConfig.accentColor || '#22d3ee';
+  const textColor = themeConfig.textColor || '#ffffff';
+  
+  // Clean appBg if it's a tailwind class
+  const customBg = themeConfig.appBg && !themeConfig.appBg.startsWith('bg-') ? themeConfig.appBg : undefined;
+
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 lg:p-8 space-y-8 animate-in fade-in zoom-in duration-500 mb-20 lg:mb-0">
+    <div className="w-full max-w-5xl mx-auto p-4 lg:p-8 space-y-8 animate-in fade-in zoom-in duration-500 mb-20 lg:mb-0 relative transition-colors duration-500 rounded-3xl overflow-hidden mt-6">
+      
+      {/* Dynamic Background for Profile Stalking */}
+      <div 
+        className={`absolute inset-0 z-[-1] pointer-events-none transition-colors duration-500 ${!customBg && themeConfig.appBg ? themeConfig.appBg : ''}`} 
+        style={customBg ? { background: customBg, opacity: 0.2 } : { opacity: themeConfig.appBg ? 0.3 : 0 }} 
+      />
+
       <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
       <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
 
@@ -181,8 +208,14 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
           />
       )}
 
-      {/* Header Card */}
-      <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl group">
+      {/* Header Card - Customizable */}
+      <div 
+        className="relative rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500 border"
+        style={{ 
+            backgroundColor: themeConfig.sidebarBg || '#0f172a',
+            borderColor: themeConfig.boardBorder ? themeConfig.boardBorder.split(' ')[2] : `${accentColor}40`
+        }}
+      >
           {/* Banner */}
           <div className="h-40 md:h-64 relative overflow-hidden bg-slate-950">
               {displayUser.banner && (displayUser.banner.startsWith('http') || displayUser.banner.startsWith('data:')) ? (
@@ -190,7 +223,7 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
               ) : (
                   <div className="w-full h-full bg-gradient-to-r from-slate-900 to-slate-800" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               
               {isCurrentUser && (
                   <button 
@@ -203,13 +236,16 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
           </div>
 
           <div className="px-6 pb-6 md:px-10 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-end gap-6">
-              {/* Avatar - Fixed Z-Index & Layout */}
+              {/* Avatar */}
               <div className="relative group/avatar shrink-0">
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-slate-900 overflow-hidden bg-slate-800 shadow-2xl relative z-10">
+                  <div 
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 overflow-hidden bg-slate-800 shadow-2xl relative z-10"
+                    style={{ borderColor: themeConfig.sidebarBg || '#0f172a' }}
+                  >
                       <img src={displayUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
                   
-                  {/* Rank Emblem Overlay - Moved Outside Overflow */}
+                  {/* Rank Emblem */}
                   <div className="absolute -bottom-3 -right-3 md:-bottom-4 md:-right-4 bg-slate-900 rounded-full p-1.5 border-4 border-slate-800 shadow-xl z-20">
                       <RankEmblem elo={displayUser.elo} className="w-12 h-12 md:w-14 md:h-14" />
                   </div>
@@ -226,7 +262,7 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
 
               <div className="flex-1 text-center md:text-left mb-2 md:mb-0 mt-2 md:mt-0">
                   <div className="flex flex-col md:flex-row items-center gap-3 mb-1">
-                      <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">{displayUser.username}</h1>
+                      <h1 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: textColor }}>{displayUser.username}</h1>
                       <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
                           <span className="text-sm font-black uppercase tracking-wider" style={{ color: rankData.config.color }}>
                               {rankData.tierName}
@@ -272,7 +308,8 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
                   ) : (
                       <button 
                         onClick={toggleFollow}
-                        className={`w-full px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isFollowing ? 'bg-slate-800 text-slate-300 hover:text-rose-400' : 'bg-cyan-600 text-white hover:bg-cyan-500'}`}
+                        className={`w-full px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${isFollowing ? 'bg-slate-800 text-slate-300 hover:text-rose-400' : 'text-white hover:opacity-90'}`}
+                        style={!isFollowing ? { backgroundColor: accentColor } : {}}
                       >
                           {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
                       </button>
@@ -296,7 +333,7 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar Stats */}
           <div className="space-y-6">
-              <LevelCard user={displayUser} />
+              <LevelCard user={displayUser} accentColor={accentColor} />
               
               <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
                   <StatCard label="Wins" value={displayUser.stats.wins} icon={Trophy} color="bg-emerald-500" />
@@ -311,13 +348,15 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
               <div className="flex gap-4 mb-6 border-b border-slate-800 pb-2 overflow-x-auto">
                   <button 
                     onClick={() => setActiveTab('overview')}
-                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'overview' ? 'border-b-2' : 'text-slate-500 hover:text-white'}`}
+                    style={activeTab === 'overview' ? { color: accentColor, borderColor: accentColor } : {}}
                   >
                       Overview
                   </button>
                   <button 
                     onClick={() => setActiveTab('history')}
-                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'history' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`pb-2 px-4 font-bold text-sm transition-all whitespace-nowrap ${activeTab === 'history' ? 'border-b-2' : 'text-slate-500 hover:text-white'}`}
+                    style={activeTab === 'history' ? { color: accentColor, borderColor: accentColor } : {}}
                   >
                       Match History
                   </button>
@@ -333,8 +372,8 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
                         className="space-y-6"
                       >
                           {/* Featured Match or Recent Achievement placeholder */}
-                          <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-8 text-center border-dashed">
-                              <Trophy className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+                          <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-8 text-center border-dashed" style={{ borderColor: accentColor ? `${accentColor}40` : undefined }}>
+                              <Trophy className="w-12 h-12 mx-auto mb-4" style={{ color: accentColor }} />
                               <h3 className="text-xl font-bold text-white">Season 1 Performance</h3>
                               <p className="text-slate-400 text-sm mt-2">Win rate: {((displayUser.stats.wins / (displayUser.stats.wins + displayUser.stats.losses || 1)) * 100).toFixed(1)}%</p>
                           </div>
@@ -384,7 +423,8 @@ const Profile: React.FC<ProfileProps> = ({ user, isCurrentUser, onReplayGame }) 
                                       
                                       <button 
                                         onClick={() => onReplayGame(match)}
-                                        className="w-full md:w-auto px-6 py-2 bg-slate-950 hover:bg-cyan-900/30 text-slate-400 hover:text-cyan-400 border border-slate-800 hover:border-cyan-500/30 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                        className="w-full md:w-auto px-6 py-2 bg-slate-950 text-slate-400 border border-slate-800 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 hover:text-white"
+                                        style={{ borderColor: accentColor ? `${accentColor}20` : undefined }}
                                       >
                                           <Swords className="w-4 h-4" /> Analyze
                                       </button>

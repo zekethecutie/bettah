@@ -14,24 +14,48 @@ export interface Particle {
 
 // Economy & Shop
 export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
-export type ItemType = 'board_theme' | 'piece_set' | 'avatar_frame';
+export type ItemType = 'board_theme' | 'piece_set' | 'currency';
 
 export interface ShopItem {
     id: string;
     name: string;
     description: string;
     price: number;
+    coinValue?: number;
     type: ItemType;
     rarity: ItemRarity;
-    previewColor?: string; // For board themes
-    config?: any; // Technical config (colors, svg paths, etc)
+    previewGradient?: string; 
+    
+    // Theme Configuration
+    config?: {
+        // Board Specifics
+        light: string; // Tailwind class for light squares
+        dark: string;  // Tailwind class for dark squares
+        boardBorder?: string;
+        
+        // Global App Theming (CSS Variables or Classes)
+        appBg?: string; // Main background class/gradient
+        sidebarBg?: string; // Sidebar background
+        panelBg?: string; // Panel background color
+        elementBg?: string; // Element/Card background color
+        borderColor?: string; // Border color
+        accentColor?: string; // Hex for accents (buttons, active states)
+        textColor?: string; // Primary text color override
+        
+        // Gameplay Visuals
+        moveIndicatorColor?: string; // Hex for valid move dots
+        checkColor?: string; // Hex for check highlight
+    };
+    
+    // Piece Set Configuration
+    pieceSetId?: string; // 'standard', 'retro', 'neon'
 }
 
 export interface UserInventory {
-    ownedItems: string[]; // List of Item IDs
+    ownedItems: string[];
     equipped: {
-        boardTheme: string; // Item ID
-        pieceSet: string; // Item ID
+        boardTheme: string;
+        pieceSet: string;
         avatarFrame?: string;
     };
 }
@@ -118,7 +142,7 @@ export interface MatchRecord {
   playerSide: 'w' | 'b'; 
   isStreamVod?: boolean;
   vodTitle?: string;
-  score?: number; // For Pulse mode
+  score?: number; 
 }
 
 export interface Friend {

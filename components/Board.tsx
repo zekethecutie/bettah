@@ -42,7 +42,8 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
   const [shake, setShake] = useState(0);
   
   // Theme State
-  const [themeConfig, setThemeConfig] = useState({ light: 'bg-[#334155]', dark: 'bg-[#1e293b]' });
+  const [themeConfig, setThemeConfig] = useState<any>({ light: 'bg-[#334155]', dark: 'bg-[#1e293b]', accentColor: '#22d3ee', checkColor: '#f43f5e' });
+  const [activePieceSet, setActivePieceSet] = useState<'standard' | 'retro' | 'neon'>('standard');
 
   // Promotion State
   const [promotionSquare, setPromotionSquare] = useState<SquareType | null>(null);
@@ -53,13 +54,23 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
   const nextId = useRef(0);
   const currentFen = useRef(game.fen());
 
-  // Load Theme
+  // Load Theme & Piece Set
   useEffect(() => {
       const user = UserManager.getCurrentUser();
-      if(user && user.inventory.equipped.boardTheme) {
-          const item = getItem(user.inventory.equipped.boardTheme);
-          if (item && item.config) {
-              setThemeConfig(item.config);
+      if(user) {
+          // Board Theme
+          if (user.inventory.equipped.boardTheme) {
+              const item = getItem(user.inventory.equipped.boardTheme);
+              if (item && item.config) {
+                  setThemeConfig(item.config);
+              }
+          }
+          // Piece Set
+          if (user.inventory.equipped.pieceSet) {
+              const item = getItem(user.inventory.equipped.pieceSet);
+              if (item && item.pieceSetId) {
+                  setActivePieceSet(item.pieceSetId as any);
+              }
           }
       }
   }, []);
@@ -303,7 +314,7 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
             setValidMoves(moves);
             playSound('start'); 
             const { x, y } = getSquareCenterPercent(square);
-            spawnParticles(x, y, '#22d3ee', 'select');
+            spawnParticles(x, y, themeConfig.accentColor || '#22d3ee', 'select');
         }
     } else {
         setSelectedSquare(null);
@@ -346,14 +357,14 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
   return (
     <motion.div 
         animate={{ x: shake * (Math.random() - 0.5), y: shake * (Math.random() - 0.5) }}
-        className="relative w-full aspect-square select-none bg-[#0f172a] rounded-lg shadow-2xl ring-1 ring-white/10 touch-none" 
-        style={{ WebkitTapHighlightColor: 'transparent' }}
+        className="relative w-full aspect-square select-none rounded-lg shadow-2xl ring-1 ring-white/10 touch-none overflow-hidden" 
+        style={{ WebkitTapHighlightColor: 'transparent', backgroundColor: '#0f172a' }} // Default bg fallback
     >
       <AnimatePresence>
         {promotionSquare && <PromotionModal color={game.turn()} onSelect={handlePromotionSelect} />}
       </AnimatePresence>
 
-      <div className="w-full h-full flex flex-wrap rounded-md overflow-hidden relative z-0">
+      <div className="w-full h-full flex flex-wrap relative z-0">
          {Array.from({length: 64}).map((_, i) => {
             const r = Math.floor(i / 8); const c = i % 8;
             const rankIdx = flip ? 7 - r : r; const fileIdx = flip ? 7 - c : c;
@@ -371,29 +382,57 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
                 <div key={square} style={{ width: '12.5%', height: '12.5%' }}>
                     <div 
                         onClick={() => handleSquareClick(square)}
-                        className={`relative w-full h-full select-none transition-colors duration-200 overflow-hidden ${isDark ? themeConfig.dark : themeConfig.light} ${isDark ? 'bg-gradient-to-br from-transparent to-black/20' : 'bg-gradient-to-br from-white/5 to-transparent'} ${isLast && 'bg-indigo-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.3)]'} ${inCheck && 'bg-rose-500/40 animate-pulse'}`}
+                        className={`relative w-full h-full select-none transition-colors duration-200 overflow-hidden ${isDark ? themeConfig.dark : themeConfig.light}`}
                     >
+                        {/* Square Overlays */}
+                        {isDark ? (
+                            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/20" />
+                        ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+                        )}
+
                         {c === 0 && <span className={`absolute top-0.5 left-1 text-[9px] font-bold pointer-events-none opacity-50 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{RANKS[rankIdx]}</span>}
                         {r === 7 && <span className={`absolute bottom-0 right-1 text-[9px] font-bold pointer-events-none opacity-50 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{FILES[fileIdx]}</span>}
                         
                         <AnimatePresence>
-                            {isSelected && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-cyan-500/20 z-0" />}
+                            {isSelected && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }} 
+                                    animate={{ opacity: 1 }} 
+                                    exit={{ opacity: 0 }} 
+                                    className="absolute inset-0 z-0"
+                                    style={{ backgroundColor: themeConfig.accentColor || '#22d3ee', opacity: 0.3 }}
+                                />
+                            )}
                         </AnimatePresence>
 
+                        {/* Valid Move Indicator */}
                         {isValidMove && !isValidCapture && (
                             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                                <div className="w-3 h-3 rounded-full bg-cyan-400/30 shadow-[0_0_10px_rgba(34,211,238,0.5)]" />
+                                <div 
+                                    className="w-3 h-3 rounded-full opacity-50 shadow-sm"
+                                    style={{ backgroundColor: themeConfig.moveIndicatorColor || themeConfig.accentColor || '#22d3ee' }}
+                                />
                             </div>
                         )}
 
+                        {/* Capture Indicator */}
                         {isValidCapture && (
                              <div className="absolute inset-0 z-10 pointer-events-none">
-                                 <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-rose-500 rounded-tl-sm" />
-                                 <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-rose-500 rounded-tr-sm" />
-                                 <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-rose-500 rounded-bl-sm" />
-                                 <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-rose-500 rounded-br-sm" />
-                                 <div className="absolute inset-0 bg-rose-500/10 animate-pulse" />
+                                 <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 rounded-tl-sm" style={{ borderColor: themeConfig.checkColor || '#f43f5e' }} />
+                                 <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 rounded-tr-sm" style={{ borderColor: themeConfig.checkColor || '#f43f5e' }} />
+                                 <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 rounded-bl-sm" style={{ borderColor: themeConfig.checkColor || '#f43f5e' }} />
+                                 <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 rounded-br-sm" style={{ borderColor: themeConfig.checkColor || '#f43f5e' }} />
+                                 <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: themeConfig.checkColor || '#f43f5e', opacity: 0.1 }} />
                              </div>
+                        )}
+
+                        {isLast && (
+                            <div className="absolute inset-0" style={{ backgroundColor: themeConfig.accentColor || '#6366f1', opacity: 0.2 }} />
+                        )}
+                        
+                        {inCheck && (
+                            <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: themeConfig.checkColor || '#f43f5e', opacity: 0.4 }} />
                         )}
                     </div>
                 </div>
@@ -415,10 +454,23 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
                     transition={{ type: "spring", stiffness: 250, damping: 25, mass: 0.8 }}
                     className="absolute w-[12.5%] h-[12.5%] flex items-center justify-center will-change-transform"
                 >
-                    {isSelected && <motion.div layoutId="selection-glow" className="absolute w-[120%] h-[120%] bg-cyan-400/30 blur-xl rounded-full -z-10" />}
-                    {isKingInCheck && !isGameOver && <div className="absolute w-[140%] h-[140%] bg-rose-500/50 blur-2xl rounded-full animate-pulse -z-10" />}
+                    {isSelected && (
+                        <motion.div 
+                            layoutId="selection-glow" 
+                            className="absolute w-[120%] h-[120%] blur-xl rounded-full -z-10"
+                            style={{ backgroundColor: themeConfig.accentColor || '#22d3ee', opacity: 0.3 }}
+                        />
+                    )}
+                    
+                    {isKingInCheck && !isGameOver && (
+                        <div 
+                            className="absolute w-[140%] h-[140%] blur-2xl rounded-full animate-pulse -z-10" 
+                            style={{ backgroundColor: themeConfig.checkColor || '#f43f5e', opacity: 0.5 }}
+                        />
+                    )}
+                    
                     <div className={`w-[85%] h-[85%] ${isSelected ? 'drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]' : 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]'}`}>
-                        <Icon color={p.color} className="w-full h-full" />
+                        <Icon color={p.color} className="w-full h-full" set={activePieceSet} />
                     </div>
                 </motion.div>
             );

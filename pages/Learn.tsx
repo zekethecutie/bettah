@@ -157,10 +157,10 @@ const Learn: React.FC<LearnProps> = () => {
                     {/* Category Selection */}
                     <div className="lg:w-64 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 shrink-0 custom-scrollbar">
                         <div className="hidden lg:block mb-6">
-                            <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-2">
-                                <GraduationCap className="w-8 h-8 text-cyan-400" /> ACADEMY
+                            <h1 className="text-3xl font-black tracking-tighter flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
+                                <GraduationCap className="w-8 h-8" style={{ color: 'var(--primary)' }} /> ACADEMY
                             </h1>
-                            <p className="text-xs text-slate-500 mt-1">Master the game, one move at a time.</p>
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Master the game, one move at a time.</p>
                         </div>
                         {CATEGORIES.map(cat => {
                             const Icon = cat.icon;
@@ -170,15 +170,16 @@ const Learn: React.FC<LearnProps> = () => {
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={`p-4 rounded-xl flex items-center gap-3 transition-all border ${
-                                        isActive ? `${cat.bg} ${cat.border} ring-1 ring-white/10` : 'bg-slate-900/30 border-transparent hover:bg-slate-800'
+                                        isActive ? `${cat.bg} ${cat.border} ring-1 ring-white/10` : 'border-transparent hover:bg-white/5'
                                     } min-w-[140px] lg:min-w-0`}
+                                    style={!isActive ? { backgroundColor: 'var(--element-bg)' } : {}}
                                 >
-                                    <div className={`${isActive ? cat.color : 'text-slate-500'}`}>
+                                    <div className={`${isActive ? cat.color : ''}`} style={!isActive ? { color: 'var(--text-muted)' } : {}}>
                                         <Icon className="w-5 h-5" />
                                     </div>
                                     <div className="text-left">
-                                        <p className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-400'}`}>{cat.id}</p>
-                                        <p className="text-[10px] text-slate-600">
+                                        <p className={`text-sm font-bold`} style={{ color: isActive ? 'var(--text-main)' : 'var(--text-muted)' }}>{cat.id}</p>
+                                        <p className="text-[10px]" style={{ color: 'var(--text-muted)', opacity: 0.8 }}>
                                             {LESSONS.filter(l => l.category === cat.id).length} Lessons
                                         </p>
                                     </div>
@@ -205,25 +206,23 @@ const Learn: React.FC<LearnProps> = () => {
                                         className={`group relative p-6 rounded-2xl border transition-all cursor-pointer overflow-hidden ${
                                             isCompleted 
                                             ? 'bg-emerald-900/10 border-emerald-500/30 hover:bg-emerald-900/20' 
-                                            : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-800'
+                                            : 'hover:border-cyan-500/50 hover:bg-white/5'
                                         }`}
+                                        style={{ backgroundColor: isCompleted ? undefined : 'var(--panel-bg)', borderColor: isCompleted ? undefined : 'var(--border-color)' }}
                                     >
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className={`p-2 rounded-lg ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-cyan-400'}`}>
+                                            <div className={`p-2 rounded-lg`} style={{ backgroundColor: isCompleted ? '#10b981' : 'var(--element-bg)', color: isCompleted ? 'white' : 'var(--primary)' }}>
                                                 {isCompleted ? <CheckCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
                                             </div>
-                                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded border ${
-                                                lesson.difficulty === 'Grandmaster' ? 'bg-amber-900/30 text-amber-400 border-amber-500/30' : 
-                                                'bg-slate-950/50 text-slate-500 border-slate-800'
-                                            }`}>
+                                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded border`} style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
                                                 {lesson.difficulty}
                                             </span>
                                         </div>
                                         
-                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">{lesson.title}</h3>
-                                        <p className="text-slate-400 text-sm mb-4 line-clamp-2">{lesson.description}</p>
+                                        <h3 className="text-xl font-bold mb-2 group-hover:text-[var(--primary)] transition-colors" style={{ color: 'var(--text-main)' }}>{lesson.title}</h3>
+                                        <p className="text-sm mb-4 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{lesson.description}</p>
                                         
-                                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
+                                        <div className="flex items-center gap-2 text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
                                             <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> +200 XP</span>
                                             {isCompleted && <span className="text-emerald-500 flex items-center gap-1 ml-auto"><CheckCircle className="w-3 h-3"/> Done</span>}
                                         </div>
@@ -233,8 +232,8 @@ const Learn: React.FC<LearnProps> = () => {
                                 );
                             }) : (
                                 <div className="col-span-full py-20 text-center opacity-50">
-                                    <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-600" />
-                                    <p>No lessons available in this category yet.</p>
+                                    <BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+                                    <p style={{ color: 'var(--text-muted)' }}>No lessons available in this category yet.</p>
                                 </div>
                             )}
                         </motion.div>
@@ -253,7 +252,7 @@ const Learn: React.FC<LearnProps> = () => {
                         className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto"
                     >
                         {/* Board Area - Order 1 on Mobile ensures it's at the top */}
-                        <div className="w-full lg:flex-1 flex justify-center items-start lg:bg-[#020617] lg:rounded-3xl lg:border lg:border-slate-800 lg:p-4 lg:shadow-2xl relative order-1">
+                        <div className="w-full lg:flex-1 flex justify-center items-start lg:rounded-3xl lg:border lg:p-4 lg:shadow-2xl relative order-1" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border-color)' }}>
                             <div className="w-full max-w-md lg:max-w-[600px] aspect-square relative mx-auto">
                                 <Board 
                                     game={game} 
@@ -286,22 +285,22 @@ const Learn: React.FC<LearnProps> = () => {
                         </div>
 
                         {/* Instructions Sidebar - Order 2 on Mobile */}
-                        <div className="w-full lg:w-96 bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-fit shrink-0 order-2">
-                            <button onClick={() => setSelectedLesson(null)} className="flex items-center gap-2 text-slate-500 hover:text-white mb-6 w-fit">
+                        <div className="w-full lg:w-96 border rounded-3xl p-6 flex flex-col h-fit shrink-0 order-2" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}>
+                            <button onClick={() => setSelectedLesson(null)} className="flex items-center gap-2 hover:text-white mb-6 w-fit" style={{ color: 'var(--text-muted)' }}>
                                 <ArrowLeft className="w-4 h-4" /> Back to Lessons
                             </button>
 
-                            <h2 className="text-2xl lg:text-3xl font-black text-white mb-2 leading-tight">{selectedLesson.title}</h2>
+                            <h2 className="text-2xl lg:text-3xl font-black mb-2 leading-tight" style={{ color: 'var(--text-main)' }}>{selectedLesson.title}</h2>
                             <div className="flex gap-2 mb-6">
                                 <span className="inline-block px-3 py-1 rounded-full bg-cyan-900/30 text-cyan-400 text-xs font-bold border border-cyan-500/20">
                                     {selectedLesson.category}
                                 </span>
-                                <span className="inline-block px-3 py-1 rounded-full bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700">
+                                <span className="inline-block px-3 py-1 rounded-full border text-xs font-bold" style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
                                     {selectedLesson.difficulty}
                                 </span>
                             </div>
 
-                            <div className="prose prose-invert text-sm text-slate-300 mb-8 leading-relaxed">
+                            <div className="prose prose-invert text-sm mb-8 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                                 <p>{selectedLesson.description}</p>
                             </div>
 
@@ -309,8 +308,8 @@ const Learn: React.FC<LearnProps> = () => {
                                 isSuccess ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-200' 
                                 : feedback?.includes('Incorrect') ? 'bg-rose-900/20 border-rose-500/30 text-rose-200'
                                 : feedback?.includes('Hint') ? 'bg-amber-900/20 border-amber-500/30 text-amber-200'
-                                : 'bg-slate-800 border-slate-700 text-slate-400'
-                            }`}>
+                                : ''
+                            }`} style={!isSuccess && !feedback ? { backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' } : {}}>
                                 <div className="flex items-center gap-2 mb-2">
                                     {feedback?.includes('Incorrect') && <AlertTriangle className="w-4 h-4" />}
                                     {feedback?.includes('Hint') && <Lightbulb className="w-4 h-4" />}
@@ -325,13 +324,15 @@ const Learn: React.FC<LearnProps> = () => {
                                 <button 
                                     onClick={showHint}
                                     disabled={isSuccess || moveIndex % 2 !== 0}
-                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 py-3 hover:opacity-80 disabled:opacity-50 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: 'var(--element-bg)', color: 'var(--primary)' }}
                                 >
                                     <Lightbulb className="w-4 h-4" /> Hint
                                 </button>
                                 <button 
                                     onClick={() => startLesson(selectedLesson)}
-                                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 py-3 hover:opacity-80 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: 'var(--element-bg)', color: 'var(--text-main)' }}
                                 >
                                     <RefreshCw className="w-4 h-4" /> Reset
                                 </button>

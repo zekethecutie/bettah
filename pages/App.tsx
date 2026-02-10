@@ -1,28 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Pages & Components
-import Auth from './Auth';
-import Navigation from '../components/Navigation';
-import Profile from './Profile';
-import Social from './Social';
-import GamePage from './GamePage';
-import Home from './Home';
-import PostView from './PostView';
-import Legal from './Legal';
-import Notifications from './Notifications';
-import ChatDrawer from '../components/ChatDrawer';
-import Landing from './Landing'; 
-import Learn from './Learn'; 
-import Leaderboard from './Leaderboard'; 
-import Docs from './Docs'; 
-import Shop from './Shop';
-import Pulse from './Pulse';
+import Auth from './pages/Auth';
+import Navigation from './components/Navigation';
+import Profile from './pages/Profile';
+import Social from './pages/Social';
+import GamePage from './pages/GamePage';
+import Home from './pages/Home';
+import PostView from './pages/PostView';
+import Legal from './pages/Legal';
+import Notifications from './pages/Notifications';
+import ChatDrawer from './components/ChatDrawer';
+import Landing from './pages/Landing'; 
+import Learn from './pages/Learn'; 
+import Leaderboard from './pages/Leaderboard'; 
+import Docs from './pages/Docs'; 
+import Shop from './pages/Shop';
+import Pulse from './pages/Pulse';
 
-import { UserManager } from '../utils/storage';
-import { User, Friend, MatchRecord } from '../types';
+import { UserManager } from './utils/storage';
+import { User, Friend, MatchRecord } from './types';
 
 // Global Styles & Defs
 const GlobalChessDefs = () => (
@@ -58,7 +58,7 @@ const GlobalChessDefs = () => (
 );
 
 // Wrapper for screens to apply consistent layout
-const ScreenWrapper = ({ children, noPadding = false }: { children: React.ReactNode, noPadding?: boolean }) => (
+const ScreenWrapper = ({ children, noPadding = false }: { children?: React.ReactNode, noPadding?: boolean }) => (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -79,7 +79,7 @@ const AppContent = () => {
   const [viewedUser, setViewedUser] = useState<User | null>(null);
   const [activeChatFriend, setActiveChatFriend] = useState<Friend | null>(null);
 
-  // Game Config State (Managed here to pass to GamePage)
+  // Game Config State
   const [gameConfig, setGameConfig] = useState<{
       mode: 'human' | 'computer' | 'replay' | 'online' | 'spectator';
       difficulty?: 'easy' | 'medium' | 'hard';
@@ -93,11 +93,12 @@ const AppContent = () => {
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
         setUser(currentUser);
+        // Redirect to home if on landing or auth page while logged in
         if (location.pathname === '/' || location.pathname === '/auth') {
             navigate('/home');
         }
     }
-  }, []);
+  }, []); // Run once on mount
 
   const handleLogin = (u: any) => {
     setUser(u);
@@ -140,7 +141,7 @@ const AppContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex overflow-hidden relative font-sans selection:bg-cyan-500/30">
+    <div className="min-h-screen h-full w-full bg-[#020617] text-white flex overflow-hidden relative font-sans selection:bg-cyan-500/30">
       <GlobalChessDefs />
 
       {/* Ambient Background */}
@@ -160,7 +161,7 @@ const AppContent = () => {
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 relative z-10 h-screen overflow-y-auto ${user && location.pathname !== '/game' && location.pathname !== '/pulse' ? 'lg:pl-64' : ''}`}>
+      <main className={`flex-1 relative z-10 h-full overflow-y-auto ${user && location.pathname !== '/game' && location.pathname !== '/pulse' ? 'lg:pl-64' : ''}`}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
                 <Route path="/" element={<Landing onGetStarted={() => navigate('/auth')} onSignIn={() => navigate('/auth')} />} />
@@ -232,6 +233,9 @@ const AppContent = () => {
                     <ScreenWrapper noPadding><Pulse /></ScreenWrapper>
                 } />
 
+                {/* Catch-all for unknown routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
           </AnimatePresence>
           
@@ -256,9 +260,9 @@ const AppContent = () => {
 
 const App = () => {
     return (
-        <BrowserRouter>
+        <HashRouter>
             <AppContent />
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 

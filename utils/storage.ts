@@ -24,6 +24,22 @@ const calculateEloChange = (playerElo: number, opponentElo: number, result: 'win
 // --- DATA HELPERS (Hybrid Approach) ---
 const useSupabase = true;
 
+// Helper to safely execute supabase calls ignoring AbortError
+const safeSupabaseCall = async <T>(promise: Promise<{ data: T | null; error: any }>): Promise<T | null> => {
+    try {
+        const { data, error } = await promise;
+        if (error) throw error;
+        return data;
+    } catch (e: any) {
+        if (e.name === 'AbortError' || e.message?.includes('aborted')) {
+            // Ignore abort errors
+            return null;
+        }
+        // console.error("Supabase Error:", e); // Optional logging
+        return null;
+    }
+};
+
 const getLocalUsers = (): Record<string, User> => {
     const data = localStorage.getItem(KEY_USERS);
     return data ? JSON.parse(data) : {};
@@ -74,10 +90,7 @@ export const UserManager = {
         let user: User | null = null;
 
         if (useSupabase) {
-            try {
-                const { data, error } = await supabase.from('users').select('*').eq('username', username).single();
-                if (data) user = data as User;
-            } catch (e) { }
+            user = await safeSupabaseCall(supabase.from('users').select('*').eq('username', username).single()) as User;
         }
 
         // Fallback or Create New
@@ -105,7 +118,7 @@ export const UserManager = {
                 };
                 
                 if (useSupabase) {
-                    try { await supabase.from('users').insert(newUser); } catch (e) {}
+                    await safeSupabaseCall(supabase.from('users').insert(newUser));
                 }
                 
                 localUsers[newUser.id] = newUser;
@@ -167,18 +180,28 @@ export const UserManager = {
         saveLocalUsers(localUsers);
 
         if (useSupabase) {
-            try { await supabase.from('users').update(updates).eq('id', currentUser.id); } catch (e) {}
+            await safeSupabaseCall(supabase.from('users').update(updates).eq('id', currentUser.id));
         }
 
         return updatedUser;
     },
 
     // --- ECONOMY ---
-    buyItem: (itemId: string): { success: boolean; message: string } => {
+    buyItem: (itemId: string): { success: boolean; message: string; type?: 'item' | 'coins' } => {
         const user = UserManager.getCurrentUser();
         const item = SHOP_ITEMS.find(i => i.id === itemId);
         
         if (!user || !item) return { success: false, message: 'User or item not found.' };
+        
+        // Handling Currency Bundles
+        if (item.type === 'currency' && item.coinValue) {
+            UserManager.updateProfile({
+                coins: user.coins + item.coinValue
+            });
+            return { success: true, message: `Added ${item.coinValue} coins to wallet!`, type: 'coins' };
+        }
+
+        // Handling Standard Items
         if (user.inventory.ownedItems.includes(itemId)) return { success: false, message: 'Item already owned.' };
         if (user.coins < item.price) return { success: false, message: 'Insufficient coins.' };
 
@@ -189,7 +212,7 @@ export const UserManager = {
             inventory: updatedInventory
         });
 
-        return { success: true, message: `Purchased ${item.name}!` };
+        return { success: true, message: `Unlocked ${item.name}!`, type: 'item' };
     },
 
     equipItem: (itemId: string, type: 'boardTheme' | 'pieceSet') => {
@@ -311,17 +334,15 @@ export const UserManager = {
         currentUser.coins += coinReward;
 
         if (useSupabase) {
-            try {
-                await supabase.from('matches').insert({ ...record, user_id: currentUser.id });
-                await supabase.from('users').update({ 
-                    elo: newElo, 
-                    stats: newStats, 
-                    xp: currentUser.xp,
-                    coins: currentUser.coins,
-                    level: currentUser.level,
-                    activeQuests: currentUser.activeQuests 
-                }).eq('id', currentUser.id);
-            } catch (e) {}
+            await safeSupabaseCall(supabase.from('matches').insert({ ...record, user_id: currentUser.id }));
+            await safeSupabaseCall(supabase.from('users').update({ 
+                elo: newElo, 
+                stats: newStats, 
+                xp: currentUser.xp,
+                coins: currentUser.coins,
+                level: currentUser.level,
+                activeQuests: currentUser.activeQuests 
+            }).eq('id', currentUser.id));
         }
 
         const matchesStr = localStorage.getItem(KEY_MATCHES);
