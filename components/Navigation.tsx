@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, User, Users, LogOut, Bell, GraduationCap, Trophy, Book, ShoppingBag, Zap, Activity } from 'lucide-react';
+import { Home, User, Users, LogOut, Bell, GraduationCap, Trophy, Book, ShoppingBag, Gamepad2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RookShapeUI } from './Icons';
 import { UserManager } from '../utils/storage';
@@ -89,8 +89,11 @@ const Navigation: React.FC<NavigationProps> = ({ onLogout, user }) => {
           }}
         >
           <div className="flex items-center gap-3 mb-10 px-2 cursor-pointer" onClick={() => navigate('/home')}>
-             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg p-1">
-                <RookShapeUI className="w-5 h-5 text-white fill-current" />
+             <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg p-1 transition-colors duration-300" 
+                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+             >
+                <RookShapeUI className="w-5 h-5 fill-current" />
              </div>
              <h1 className="text-xl font-black tracking-tighter" style={{ color: 'var(--text-main)' }}>
                 NEXUS<span style={{ color: 'var(--primary)' }}>CHESS</span>
@@ -99,7 +102,7 @@ const Navigation: React.FC<NavigationProps> = ({ onLogout, user }) => {
 
           <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-2">
             <NavItem icon={Home} label="Home" path="/home" />
-            <NavItem icon={Activity} label="Pulse Mode" path="/pulse-intro" />
+            <NavItem icon={Gamepad2} label="Games" path="/games" />
             <NavItem icon={GraduationCap} label="Academy" path="/learn" />
             <NavItem icon={Trophy} label="Leaderboard" path="/leaderboard" />
             <NavItem icon={ShoppingBag} label="Shop" path="/shop" />
@@ -144,9 +147,8 @@ const Navigation: React.FC<NavigationProps> = ({ onLogout, user }) => {
         >
              <div className="flex items-center overflow-x-auto gap-1 no-scrollbar pb-1">
                  <NavItem isMobile icon={Home} label="Home" path="/home" />
-                 <NavItem isMobile icon={Activity} label="Pulse" path="/pulse-intro" />
+                 <NavItem isMobile icon={Gamepad2} label="Games" path="/games" />
                  <NavItem isMobile icon={GraduationCap} label="Learn" path="/learn" />
-                 <NavItem isMobile icon={Book} label="Guide" path="/docs" />
                  <NavItem isMobile icon={ShoppingBag} label="Shop" path="/shop" />
                  <NavItem isMobile icon={Trophy} label="Rank" path="/leaderboard" />
                  <NavItem isMobile icon={Users} label="Social" path="/social" />

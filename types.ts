@@ -41,14 +41,16 @@ export interface ShopItem {
         borderColor?: string; // Border color
         accentColor?: string; // Hex for accents (buttons, active states)
         textColor?: string; // Primary text color override
+        textMuted?: string; // Secondary text color override
         
         // Gameplay Visuals
         moveIndicatorColor?: string; // Hex for valid move dots
+        moveIndicatorRing?: string; // Hex for ring/outline of valid move dots (for contrast)
         checkColor?: string; // Hex for check highlight
     };
     
     // Piece Set Configuration
-    pieceSetId?: string; // 'standard', 'retro', 'neon'
+    pieceSetId?: string; // 'standard', 'retro', 'neon', 'ranked'
 }
 
 export interface UserInventory {

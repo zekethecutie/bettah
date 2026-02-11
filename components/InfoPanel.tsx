@@ -59,11 +59,17 @@ const CapturedList = ({ pieces, color }: { pieces: PieceSymbol[], color: 'w' | '
 const UserDisplay = ({ user, time, isTurn, color, captured, isTop, isReplay, replayStep, totalSteps }: any) => {
     
     return (
-        <div className={`flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border backdrop-blur-md shadow-lg relative overflow-hidden transition-all duration-300 ${isTurn ? (color === 'w' ? 'border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : 'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.1)]') : 'border-slate-800/50'}`}>
+        <div 
+            className={`flex items-center justify-between p-3 rounded-xl border backdrop-blur-md shadow-lg relative overflow-hidden transition-all duration-300 ${isTurn ? (color === 'w' ? 'border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : 'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.1)]') : ''}`}
+            style={{ 
+                backgroundColor: 'var(--element-bg)', 
+                borderColor: isTurn ? undefined : 'var(--border-color)'
+            }}
+        >
             {isTurn && <div className={`absolute inset-0 bg-gradient-to-r ${color === 'w' ? 'from-cyan-900/10' : 'from-rose-900/10'} via-transparent to-transparent animate-pulse`} />}
             
             <div className="flex items-center gap-3 relative z-10 overflow-hidden">
-                <div className={`relative w-10 h-10 rounded-lg shrink-0 flex items-center justify-center bg-slate-800 shadow-inner border overflow-visible ${isTurn ? 'border-cyan-500/50' : 'border-slate-700'}`}>
+                <div className={`relative w-10 h-10 rounded-lg shrink-0 flex items-center justify-center shadow-inner border overflow-visible ${isTurn ? 'border-cyan-500/50' : 'border-slate-700'}`} style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
                     <img src={user.avatar} alt={user.username} className="w-full h-full object-cover rounded-lg overflow-hidden" />
                     {/* Tiny Rank Badge */}
                     <div className="absolute -bottom-1.5 -right-1.5 z-20">
@@ -71,9 +77,9 @@ const UserDisplay = ({ user, time, isTurn, color, captured, isTop, isReplay, rep
                     </div>
                 </div>
                 <div className="min-w-0">
-                    <p className="font-bold text-sm text-white truncate flex items-center gap-1">
+                    <p className="font-bold text-sm truncate flex items-center gap-1" style={{ color: 'var(--text-main)' }}>
                         {user.username}
-                        <span className="text-[10px] bg-slate-800 px-1 rounded text-slate-400 font-mono">{user.elo}</span>
+                        <span className="text-[10px] bg-slate-800 px-1 rounded font-mono" style={{ color: 'var(--text-muted)' }}>{user.elo}</span>
                     </p>
                     <div className="flex items-center gap-1">
                         {user.country && <span className="text-xs grayscale opacity-70">{user.country.split(' ')[0]}</span>}
@@ -82,7 +88,13 @@ const UserDisplay = ({ user, time, isTurn, color, captured, isTop, isReplay, rep
                 </div>
             </div>
 
-            <div className={`text-lg font-mono font-bold tracking-wider px-2 py-0.5 rounded-lg border relative z-10 transition-colors duration-300 ${isTurn ? (color === 'w' ? 'bg-slate-950/80 text-cyan-400 border-cyan-500/30' : 'bg-slate-950/80 text-rose-400 border-rose-500/30') : 'bg-slate-950/30 text-slate-500 border-slate-800/50'}`}>
+            <div 
+                className={`text-lg font-mono font-bold tracking-wider px-2 py-0.5 rounded-lg border relative z-10 transition-colors duration-300 ${
+                    isTurn ? (color === 'w' ? 'bg-slate-950/80 text-cyan-400 border-cyan-500/30' : 'bg-slate-950/80 text-rose-400 border-rose-500/30') 
+                    : 'text-slate-500'
+                }`}
+                style={!isTurn ? { backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' } : {}}
+            >
                 {isReplay ? (
                     <span className="text-xs">
                         {isTurn ? `Move ${Math.ceil(replayStep / 2)}` : 'Waiting'}

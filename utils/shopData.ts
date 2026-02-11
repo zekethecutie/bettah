@@ -6,48 +6,49 @@ export const SHOP_ITEMS: ShopItem[] = [
     {
         id: 'board_classic',
         name: 'Nexus Slate',
-        description: 'The standard issue high-contrast look.',
+        description: 'The standard issue high-contrast look. Professional and clean.',
         price: 0,
         type: 'board_theme',
         rarity: 'common',
         previewGradient: 'from-slate-700 to-slate-900',
         config: { 
-            light: 'bg-[#334155]', 
+            light: 'bg-[#475569]', 
             dark: 'bg-[#1e293b]',
-            // Global Palette (Default)
+            // Global Palette
             appBg: '#020617', 
-            sidebarBg: 'rgba(2, 6, 23, 0.8)',
-            panelBg: 'rgba(15, 23, 42, 0.6)', // slate-900/60
-            elementBg: 'rgba(30, 41, 59, 0.8)', // slate-800
-            borderColor: 'rgba(51, 65, 85, 0.5)', // slate-700
-            accentColor: '#22d3ee', 
-            textColor: '#ffffff',
-            // Custom prop for fallback
-            moveIndicatorColor: '#22d3ee',
+            sidebarBg: 'rgba(15, 23, 42, 0.95)',
+            panelBg: 'rgba(30, 41, 59, 0.4)', 
+            elementBg: 'rgba(51, 65, 85, 0.4)', 
+            borderColor: 'rgba(148, 163, 184, 0.1)', 
+            accentColor: '#38bdf8', 
+            textColor: '#f8fafc',
+            textMuted: '#94a3b8',
+            moveIndicatorColor: '#38bdf8',
             checkColor: '#f43f5e'
         }
     },
     {
         id: 'board_midnight',
         name: 'Midnight Wood',
-        description: 'Warm, sophisticated, and cozy.',
+        description: 'Deep mahogany and brass. The study of a grandmaster.',
         price: 300,
         type: 'board_theme',
         rarity: 'common',
-        previewGradient: 'from-amber-900 to-slate-950',
+        previewGradient: 'from-orange-900 to-slate-950',
         config: { 
-            light: 'bg-[#78350f]', 
-            dark: 'bg-[#451a03]',
+            light: 'bg-[#7c2d12]', // Rich Wood Light
+            dark: 'bg-[#451a03]',  // Deep Wood Dark
             // Global Palette
-            appBg: '#1c100b', 
-            sidebarBg: 'rgba(42, 23, 16, 0.95)',
-            panelBg: 'rgba(67, 20, 7, 0.4)',
-            elementBg: 'rgba(120, 53, 15, 0.3)',
-            borderColor: 'rgba(146, 64, 14, 0.3)',
-            accentColor: '#d97706',
-            textColor: '#fef3c7',
-            moveIndicatorColor: '#fbbf24',
-            checkColor: '#ef4444'
+            appBg: 'linear-gradient(to bottom, #1a0803, #0f0502)', // Deep espresso
+            sidebarBg: 'rgba(28, 10, 5, 0.95)',
+            panelBg: 'rgba(67, 20, 7, 0.3)',
+            elementBg: 'linear-gradient(to right, rgba(124, 45, 18, 0.2), rgba(69, 26, 3, 0.2))',
+            borderColor: 'rgba(217, 119, 6, 0.2)', // Bronze border
+            accentColor: '#fbbf24', // Amber gold
+            textColor: '#fffbeb', // Warm white
+            textMuted: '#d6d3d1',
+            moveIndicatorColor: '#f59e0b',
+            checkColor: '#dc2626'
         }
     },
     {
@@ -57,90 +58,102 @@ export const SHOP_ITEMS: ShopItem[] = [
         price: 1500,
         type: 'board_theme',
         rarity: 'epic',
-        previewGradient: 'from-pink-600 via-purple-600 to-cyan-600',
+        previewGradient: 'from-fuchsia-600 via-purple-900 to-cyan-900',
         config: { 
-            light: 'bg-slate-900 border border-pink-500/20 shadow-[inset_0_0_10px_rgba(236,72,153,0.1)]', 
-            dark: 'bg-black border border-cyan-500/20 shadow-[inset_0_0_15px_rgba(6,182,212,0.1)]',
+            light: 'bg-[#1e1b4b] border border-fuchsia-500/30 shadow-[inset_0_0_15px_rgba(232,121,249,0.2)]', 
+            dark: 'bg-[#020617] border border-cyan-500/30 shadow-[inset_0_0_20px_rgba(34,211,238,0.1)]',
             // Global Palette
-            appBg: '#050505',
-            sidebarBg: 'rgba(10, 10, 15, 0.95)',
-            panelBg: 'rgba(20, 20, 30, 0.8)',
-            elementBg: 'rgba(236, 72, 153, 0.1)',
-            borderColor: 'rgba(217, 70, 239, 0.3)',
-            accentColor: '#d946ef',
-            textColor: '#e879f9',
-            moveIndicatorColor: '#d946ef',
-            checkColor: '#ff0000',
-            boardBorder: '1px solid #d946ef'
+            appBg: 'radial-gradient(circle at 50% 0%, #2e1065 0%, #020617 70%)',
+            sidebarBg: 'rgba(10, 5, 20, 0.9)',
+            panelBg: 'rgba(19, 7, 30, 0.7)',
+            elementBg: 'rgba(255, 0, 255, 0.05)',
+            borderColor: 'rgba(217, 70, 239, 0.4)', // Neon Pink Border
+            accentColor: '#22d3ee', // Cyan
+            textColor: '#e879f9', // Light Pink Text
+            textMuted: '#a78bfa',
+            moveIndicatorColor: '#00ffaa',
+            checkColor: '#ff003c'
         }
     },
     {
         id: 'board_glass',
-        name: 'Aero Glass',
-        description: 'Clean, minimal, and weightless.',
+        name: 'Frutiger Aero',
+        description: 'Relive the 2000s. Glossy textures, fresh grass, and aurora skies.',
         price: 1200,
         type: 'board_theme',
         rarity: 'rare',
-        previewGradient: 'from-cyan-500/50 to-blue-500/50',
+        previewGradient: 'from-green-400 via-cyan-400 to-blue-500',
         config: { 
-            light: 'bg-white/10 backdrop-blur-md border border-white/20', 
-            dark: 'bg-black/20 backdrop-blur-md border border-white/5',
-            // Global Palette
-            appBg: '#0f172a', // Deep blue-grey
-            sidebarBg: 'rgba(255, 255, 255, 0.05)',
-            panelBg: 'rgba(255, 255, 255, 0.03)',
-            elementBg: 'rgba(255, 255, 255, 0.1)',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            accentColor: '#38bdf8',
-            textColor: '#f0f9ff',
+            // Glossy/Glassy Tiles
+            // Light = Glossy White/Blue tint
+            light: 'bg-gradient-to-b from-white/60 to-white/20 border-t border-white/80 shadow-[inset_0_5px_10px_rgba(255,255,255,0.5)] backdrop-blur-sm',
+            // Dark = Glossy Green/Blue tint (Vista Style)
+            dark: 'bg-gradient-to-b from-[#8edc9d]/80 to-[#43c6ac]/80 border-t border-white/40 shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] backdrop-blur-md',
+            
+            // Global Palette: Frutiger Aero (Aurora Borealis + Grass)
+            // Background is a rich aurora gradient
+            appBg: 'linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%)', 
+            
+            sidebarBg: 'rgba(255, 255, 255, 0.25)', // Milky glass
+            panelBg: 'rgba(255, 255, 255, 0.35)', 
+            elementBg: 'linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0.1))',
+            borderColor: 'rgba(255, 255, 255, 0.6)',
+            accentColor: '#0061ff', // Deep Aero Blue
+            textColor: '#0f172a', // Dark text for light bg
+            textMuted: '#334155',
             moveIndicatorColor: '#ffffff',
-            checkColor: '#f43f5e'
+            moveIndicatorRing: '#0061ff', // Blue ring
+            checkColor: '#ff0055'
         }
     },
     {
         id: 'board_void',
         name: 'The Void',
-        description: 'Absolute darkness. Monochrome mastery.',
+        description: 'Absolute darkness. Minimal distractions.',
         price: 2000,
         type: 'board_theme',
         rarity: 'epic',
         previewGradient: 'from-gray-900 to-black',
         config: { 
-            light: 'bg-neutral-800', 
-            dark: 'bg-black',
+            light: 'bg-[#262626]', 
+            dark: 'bg-[#0a0a0a]',
             // Global Palette
             appBg: '#000000',
-            sidebarBg: 'rgba(5, 5, 5, 1)',
-            panelBg: 'rgba(20, 20, 20, 1)',
-            elementBg: 'rgba(40, 40, 40, 1)',
-            borderColor: 'rgba(60, 60, 60, 1)',
+            sidebarBg: '#000000',
+            panelBg: '#0a0a0a',
+            elementBg: '#171717',
+            borderColor: '#262626',
             accentColor: '#ffffff',
-            textColor: '#ffffff',
+            textColor: '#e5e5e5',
+            textMuted: '#525252',
             moveIndicatorColor: '#525252',
-            checkColor: '#991b1b'
+            checkColor: '#7f1d1d'
         }
     },
     {
         id: 'board_gold',
         name: 'Midas Touch',
-        description: 'Pure luxury. Turns everything to gold.',
+        description: 'Pure luxury. Onyx and liquid gold.',
         price: 5000,
         type: 'board_theme',
         rarity: 'legendary',
         previewGradient: 'from-yellow-300 via-amber-500 to-yellow-600',
         config: { 
-            light: 'bg-amber-100', 
-            dark: 'bg-gradient-to-br from-amber-400 to-amber-600',
-            // Global Palette
-            appBg: '#1a1200',
-            sidebarBg: 'rgba(40, 30, 0, 0.95)',
-            panelBg: 'rgba(60, 45, 0, 0.6)',
-            elementBg: 'rgba(251, 191, 36, 0.1)',
-            borderColor: 'rgba(251, 191, 36, 0.4)',
-            accentColor: '#fbbf24',
-            textColor: '#fde68a',
-            moveIndicatorColor: '#f59e0b',
-            checkColor: '#dc2626'
+            // Board: Black Marble vs Gold Leaf
+            light: 'bg-gradient-to-br from-[#fcd34d] to-[#d97706] shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)]', 
+            dark: 'bg-[#0f0f0f] border border-[#78350f] shadow-[inset_0_0_10px_rgba(0,0,0,0.8)]',
+            // Global Palette: Expensive Dark Mode
+            appBg: 'radial-gradient(circle at top, #27272a 0%, #000000 100%)',
+            sidebarBg: 'rgba(12, 10, 9, 0.95)',
+            panelBg: 'linear-gradient(135deg, rgba(28, 25, 23, 0.9) 0%, rgba(0,0,0,0.9) 100%)',
+            elementBg: 'linear-gradient(to bottom, rgba(251, 191, 36, 0.05), rgba(0,0,0,0))', // Subtle gold tint
+            borderColor: '#b45309', // Dark Gold Border
+            accentColor: '#fbbf24', // Bright Gold
+            textColor: '#fffbeb', // Ivory
+            textMuted: '#a8a29e', // Warm Grey
+            moveIndicatorColor: '#fbbf24', // Gold Dots
+            moveIndicatorRing: '#000000', // Black Outline for visibility on gold squares
+            checkColor: '#ef4444'
         }
     },
     
@@ -156,8 +169,8 @@ export const SHOP_ITEMS: ShopItem[] = [
     },
     {
         id: 'pieces_retro',
-        name: '8-Bit Kingdom',
-        description: 'Pixel art pieces for the nostalgic tactician.',
+        name: 'Pixel Warriors',
+        description: '8-Bit Kingdom style pieces. Tintable for any board.',
         price: 1000,
         type: 'piece_set',
         rarity: 'rare',
@@ -166,16 +179,36 @@ export const SHOP_ITEMS: ShopItem[] = [
     },
     {
         id: 'pieces_neon',
-        name: 'Laser Grid',
-        description: 'Glowing wireframe pieces that cut through the dark.',
+        name: 'Cybermytica',
+        description: 'Advanced circuitry. Holographic wireframes with energy nodes.',
         price: 2500,
         type: 'piece_set',
         rarity: 'epic',
         pieceSetId: 'neon',
-        previewGradient: 'from-green-400 to-cyan-500'
+        previewGradient: 'from-cyan-500 to-rose-600'
+    },
+    {
+        id: 'pieces_ranked',
+        name: 'Ranked Elite',
+        description: 'Forged from competitive ranks. Platinum/Diamond (White) vs Ascendant (Black).',
+        price: 5000,
+        type: 'piece_set',
+        rarity: 'legendary',
+        pieceSetId: 'ranked',
+        previewGradient: 'from-blue-500 via-purple-500 to-red-500'
+    },
+    {
+        id: 'pieces_cyber2',
+        name: 'Cybermytica 2',
+        description: 'Titan Blue vs Tartarus Red. The ultimate cyber-warfare set.',
+        price: 8000,
+        type: 'piece_set',
+        rarity: 'legendary',
+        pieceSetId: 'cyber2',
+        previewGradient: 'from-cyan-500 via-slate-900 to-red-600'
     },
 
-    // --- CURRENCY BUNDLES ---
+    // --- CURRENCY ---
     {
         id: 'coins_handful',
         name: 'Handful of Coins',

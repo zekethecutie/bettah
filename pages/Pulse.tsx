@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, X, CheckCircle, AlertTriangle, Clock, Play } from 'lucide-react';
+import { Activity, X, CheckCircle, AlertTriangle, Clock, Play, HelpCircle } from 'lucide-react';
 import { Chess, Move } from 'chess.js';
 import Board from '../components/Board';
 import { playSound } from '../utils/gameLogic';
@@ -14,6 +14,7 @@ const PULSE_TIME = 180; // 3 minutes
 const Pulse: React.FC = () => {
     const navigate = useNavigate();
     const [gameState, setGameState] = useState<'intro' | 'playing' | 'over'>('intro');
+    const [showTutorial, setShowTutorial] = useState(false);
     const [game, setGame] = useState(new Chess());
     const [currentPuzzle, setCurrentPuzzle] = useState<any>(null);
     const [score, setScore] = useState(0);
@@ -68,11 +69,7 @@ const Pulse: React.FC = () => {
     const handleMove = (move: Move) => {
         if (gameState !== 'playing' || !currentPuzzle) return;
 
-        // Check if move matches solution
         // Simple check: is it the first move of solution?
-        // Pulse mode usually just asks for the BEST move.
-        // We'll check if the move made matches the first move in solutionMoves array of the lesson
-        
         const expectedSan = currentPuzzle.solutionMoves[0];
         
         if (move.san === expectedSan) {
@@ -95,8 +92,7 @@ const Pulse: React.FC = () => {
             playSound('check');
             setNotification({ type: 'error', message: 'MISS' });
             
-            // Reset board to try again? Or skip? Usually skip or fail.
-            // Let's reset board state undoing the move
+            // Reset board state undoing the move
             setTimeout(() => {
                 const g = new Chess(game.fen());
                 g.undo();
@@ -132,13 +128,58 @@ const Pulse: React.FC = () => {
             {/* Background Pulse */}
             <div className={`absolute inset-0 bg-red-900/20 transition-opacity duration-500 ${timeLeft < 30 ? 'opacity-100 animate-pulse' : 'opacity-0'}`} />
 
+            {/* TUTORIAL MODAL */}
+            <AnimatePresence>
+                {showTutorial && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                        onClick={() => setShowTutorial(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9 }} 
+                            animate={{ scale: 1 }} 
+                            className="bg-slate-900 border border-slate-700 p-8 rounded-3xl max-w-sm w-full shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2"><HelpCircle /> How to Play</h2>
+                            <ul className="space-y-4 text-slate-300 mb-8">
+                                <li className="flex gap-3 items-start">
+                                    <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                                    <span><strong>3 Minutes</strong> on the clock. Speed is essential.</span>
+                                </li>
+                                <li className="flex gap-3 items-start">
+                                    <X className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                                    <span><strong>3 Strikes</strong> and you're out. Accuracy matters.</span>
+                                </li>
+                                <li className="flex gap-3 items-start">
+                                    <Activity className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                    <span>Solve as many tactical puzzles as you can to get a high score.</span>
+                                </li>
+                            </ul>
+                            <button onClick={() => setShowTutorial(false)} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200">Got it!</button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {gameState === 'intro' && (
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="z-10 text-center p-8 bg-slate-900/80 border border-red-500/30 rounded-3xl backdrop-blur-xl shadow-2xl max-w-md mx-4">
                     <Activity className="w-20 h-20 text-red-500 mx-auto mb-6 animate-pulse" />
                     <h1 className="text-5xl font-black text-white italic mb-2 tracking-tighter">PULSE MODE</h1>
-                    <p className="text-slate-400 mb-8 text-lg">3 Minutes. 3 Strikes. Solve as many puzzles as you can. Speed is key.</p>
+                    <p className="text-slate-400 mb-8 text-lg">Speed. Accuracy. Instinct.</p>
+                    
+                    <button 
+                        onClick={() => setShowTutorial(true)}
+                        className="mb-6 text-sm text-slate-400 hover:text-white flex items-center justify-center gap-2 mx-auto"
+                    >
+                        <HelpCircle className="w-4 h-4" /> How to Play
+                    </button>
+
                     <div className="flex gap-4">
-                        <button onClick={() => navigate('/home')} className="flex-1 py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700">Exit</button>
+                        <button onClick={() => navigate('/games')} className="flex-1 py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700">Exit</button>
                         <button onClick={startGame} className="flex-1 py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]">Start Run</button>
                     </div>
                 </motion.div>
@@ -215,7 +256,7 @@ const Pulse: React.FC = () => {
 
                     <div className="flex flex-col gap-3">
                         <button onClick={startGame} className="w-full py-4 bg-white text-slate-900 font-black rounded-xl hover:bg-slate-200">Play Again</button>
-                        <button onClick={() => navigate('/home')} className="w-full py-4 bg-slate-800 text-slate-400 font-bold rounded-xl hover:text-white">Return Home</button>
+                        <button onClick={() => navigate('/games')} className="w-full py-4 bg-slate-800 text-slate-400 font-bold rounded-xl hover:text-white">Return to Arcade</button>
                     </div>
                 </motion.div>
             )}

@@ -20,6 +20,7 @@ import Leaderboard from './pages/Leaderboard';
 import Docs from './pages/Docs'; 
 import Shop from './pages/Shop';
 import Pulse from './pages/Pulse';
+import GamesHub from './pages/GamesHub';
 
 import { UserManager } from './utils/storage';
 import { User, Friend, MatchRecord } from './types';
@@ -110,6 +111,8 @@ const AppContent = () => {
           const item = getItem(user.inventory.equipped.boardTheme);
           if (item && item.config) {
               setThemeConfig(item.config);
+          } else {
+              setThemeConfig({}); // Fallback
           }
       }
   }, [user?.inventory?.equipped?.boardTheme]);
@@ -155,6 +158,7 @@ const AppContent = () => {
   };
 
   // --- GLOBAL THEME INJECTION ---
+  // If appBg contains 'gradient', we use it as background, else fallback color
   const cssVars = {
       '--app-bg': themeConfig.appBg || '#020617',
       '--panel-bg': themeConfig.panelBg || 'rgba(15, 23, 42, 0.6)',
@@ -170,7 +174,11 @@ const AppContent = () => {
   return (
     <div 
         className="min-h-screen h-full w-full flex overflow-hidden relative font-sans selection:bg-[var(--primary-dim)] transition-colors duration-500"
-        style={{ ...cssVars, backgroundColor: 'var(--app-bg)', color: 'var(--text-main)' }}
+        style={{ 
+            ...cssVars, 
+            background: themeConfig.appBg?.includes('gradient') ? themeConfig.appBg : 'var(--app-bg)',
+            color: 'var(--text-main)' 
+        }}
     >
       <GlobalChessDefs />
 
@@ -193,6 +201,10 @@ const AppContent = () => {
                     <ScreenWrapper><Home onStartGame={startGame} onViewProfile={handleViewProfile} /></ScreenWrapper>
                 } />
                 
+                <Route path="/games" element={
+                    <ScreenWrapper><GamesHub /></ScreenWrapper>
+                } />
+
                 <Route path="/shop" element={
                     <ScreenWrapper><Shop /></ScreenWrapper>
                 } />

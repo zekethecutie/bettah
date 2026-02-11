@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Cpu, Users, Zap, Globe, Play, X, Crown, HelpCircle, Flame, Target, GraduationCap, Layers, Activity, Smartphone, Swords, Star, Eye } from 'lucide-react';
 import { UserManager } from '../utils/storage';
 import { User } from '../types';
-import { RookShapeUI, PieceIcons } from '../components/Icons';
+import { RookShapeUI, PieceIcons, LogoShapeUI } from '../components/Icons';
 import { getLevelTitle, getXpForNextLevel } from '../utils/questSystem';
 
 interface HomeProps {
@@ -145,9 +145,7 @@ const Home: React.FC<HomeProps> = ({ onStartGame, onViewProfile }) => {
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-4">
          <div className="space-y-4">
             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl shadow-lg">
-                    <RookShapeUI className="w-8 h-8 text-white fill-current" />
-                </div>
+                <LogoShapeUI className="w-14 h-14 p-2" />
                 <div>
                     <h1 className="text-4xl lg:text-5xl font-black tracking-tighter" style={{ color: 'var(--text-main)' }}>
                         NEXUS<span style={{ color: 'var(--primary)' }}>CHESS</span>

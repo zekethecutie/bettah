@@ -33,10 +33,8 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const [isStreaming, setIsStreaming] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
 
-  // Determined Player Color (after handling 'random')
+  // Determined Player Color
   const [userSide, setUserSide] = useState<'w' | 'b'>('w');
-  
-  // Exit Confirmation State
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Mobile History State
@@ -50,7 +48,7 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   } | null>(null);
 
   // Timer State
-  const [whiteTime, setWhiteTime] = useState(600); // 10 minutes default
+  const [whiteTime, setWhiteTime] = useState(600); 
   const [blackTime, setBlackTime] = useState(600);
   const lastTimeRef = useRef<number>(Date.now());
   
@@ -58,9 +56,10 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const [replayStep, setReplayStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [replaySpeed, setReplaySpeed] = useState<1 | 2 | 4>(1); // 1x, 2x, 4x speed
+  const [replaySpeed, setReplaySpeed] = useState<1 | 2 | 4>(1); 
+  const replayMasterGame = useRef<Chess | null>(null); // Keep a reference to the full game for replay
 
-  // Users for InfoPanel
+  // Users
   const currentUser = UserManager.getCurrentUser();
   const [whiteUser, setWhiteUser] = useState<User | undefined>(undefined);
   const [blackUser, setBlackUser] = useState<User | undefined>(undefined);
@@ -79,9 +78,11 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         setIsPlaying(true); 
     } else if (gameMode === 'replay' && replayMatch) {
         try {
-            const tempGame = new Chess();
-            tempGame.loadPgn(replayMatch.pgn);
-            setTotalSteps(tempGame.history().length);
+            const master = new Chess();
+            master.loadPgn(replayMatch.pgn);
+            replayMasterGame.current = master;
+            
+            setTotalSteps(master.history().length);
             
             const cleanGame = new Chess();
             setGame(cleanGame);
@@ -114,11 +115,8 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
     } else {
         let finalSide: 'w' | 'b' = 'w';
         if (gameMode === 'computer' || gameMode === 'online') {
-            if (playerColor === 'random') {
-                finalSide = Math.random() > 0.5 ? 'w' : 'b';
-            } else {
-                finalSide = playerColor === 'b' ? 'b' : 'w';
-            }
+            if (playerColor === 'random') finalSide = Math.random() > 0.5 ? 'w' : 'b';
+            else finalSide = playerColor === 'b' ? 'b' : 'w';
         }
         setUserSide(finalSide);
         setBoardOrientation(finalSide === 'b'); 
@@ -147,11 +145,11 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
     }
   }, [gameMode, replayMatch, opponent, playerColor]);
 
-  // Viewer Count Simulation
+  // Viewer Count
   useEffect(() => {
       let interval: number;
       if (isStreaming) {
-          setNotification({ type: 'info', message: 'You are LIVE! Opponent notified.' });
+          setNotification({ type: 'info', message: 'You are LIVE! Match recording.' });
           setViewerCount(Math.floor(Math.random() * 50) + 10);
           interval = window.setInterval(() => {
               setViewerCount(prev => Math.max(0, prev + Math.floor(Math.random() * 5) - 2));
@@ -164,7 +162,7 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
 
   const toggleStream = () => {
       if (isStreaming) {
-          setNotification({ type: 'info', message: 'Stream Ended. VOD Saved.' });
+          setNotification({ type: 'info', message: 'Stream Ended.' });
           setIsStreaming(false);
       } else {
           setIsStreaming(true);
@@ -186,13 +184,11 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   // Timer Logic
   useEffect(() => {
     let animationFrameId: number;
-    
     const updateTimer = () => {
         if (!isMounted.current) return;
         if (gameMode !== 'replay' && !gameOverData) {
             const now = Date.now();
             const delta = now - lastTimeRef.current;
-            
             if (delta >= 100) {
                 const deltaSeconds = delta / 1000;
                 if (game.turn() === 'w') {
@@ -213,12 +209,10 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
             animationFrameId = requestAnimationFrame(updateTimer);
         }
     };
-
     if (gameMode !== 'replay' && !gameOverData) {
         lastTimeRef.current = Date.now(); 
         animationFrameId = requestAnimationFrame(updateTimer);
     }
-
     return () => cancelAnimationFrame(animationFrameId);
   }, [gameMode, gameOverData, game.turn()]);
 
@@ -227,7 +221,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
     if (gameMode !== 'replay' && gameMode !== 'spectator' && game.isGameOver()) {
         let type: any = 'draw';
         let winner: any = null;
-        
         if (game.isCheckmate()) {
             type = 'checkmate';
             winner = game.turn() === 'w' ? 'b' : 'w';
@@ -238,21 +231,22 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
 
         setGameOverData({ type, winner });
         
-        const wasStreaming = isStreaming;
+        // Pass the PGN at the moment of game end
+        saveGameResult(winner, type, isStreaming, game.pgn());
+        
         if (isStreaming) {
             setIsStreaming(false);
             setNotification({ type: 'info', message: 'Stream Ended (Game Over)' });
         }
-
-        saveGameResult(winner, type, wasStreaming);
     }
   }, [game]);
 
-  const saveGameResult = (winner: 'w' | 'b' | null, type: string, wasStreaming: boolean) => {
+  const saveGameResult = (winner: 'w' | 'b' | null, type: string, wasStreaming: boolean, finalPgn?: string) => {
         if (gameMode === 'computer' || gameMode === 'online') {
             const result = winner ? (winner === userSide ? 'win' : 'loss') : 'draw';
             const opponentName = (userSide === 'w' ? blackUser?.username : whiteUser?.username) || 'Opponent';
             const vodTitle = wasStreaming ? `Live Stream vs ${opponentName}` : undefined;
+            const pgnToSave = finalPgn || game.pgn();
 
             setTimeout(() => {
                 if (isMounted.current) {
@@ -261,14 +255,14 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                         opponent: opponentName,
                         opponentElo: (userSide === 'w' ? blackUser?.elo : whiteUser?.elo) || 1200,
                         result, 
-                        pgn: game.pgn(),
+                        pgn: pgnToSave, // Ensure PGN is saved
                         mode: gameMode === 'computer' ? 'computer' : 'rapid',
                         playerSide: userSide,
                         isStreamVod: wasStreaming,
                         vodTitle
                     });
                 }
-            }, 1000);
+            }, 500);
         }
   };
 
@@ -289,39 +283,47 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
        if (isStreaming) setIsStreaming(false);
        setGameOverData({ type: 'resign', winner });
        playSound('game-over');
-       saveGameResult(winner, 'resign', wasStreaming);
+       saveGameResult(winner, 'resign', wasStreaming, game.pgn());
        setShowExitConfirm(false);
   };
 
-  // Replay Logic
-  useEffect(() => {
-    let interval: number;
-    if (gameMode === 'replay' && isPlaying && replayMatch) {
-        const delay = 1500 / replaySpeed;
-        interval = window.setInterval(() => {
-            if (replayStep < totalSteps) stepReplay(1);
-            else setIsPlaying(false);
-        }, delay);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, replayStep, totalSteps, gameMode, replayMatch, replaySpeed]);
-
+  // --- REPLAY STEP LOGIC ---
   const stepReplay = (direction: number) => {
-      if (!replayMatch) return;
+      if (!replayMasterGame.current) return;
       const targetStep = replayStep + direction;
       if (targetStep < 0 || targetStep > totalSteps) return;
 
-      const masterGame = new Chess();
-      masterGame.loadPgn(replayMatch.pgn);
-      const history = masterGame.history();
+      const history = replayMasterGame.current.history();
       
       const newDisplayGame = new Chess();
-      for (let i = 0; i < targetStep; i++) newDisplayGame.move(history[i]);
+      for (let i = 0; i < targetStep; i++) {
+          newDisplayGame.move(history[i]);
+      }
       
       setGame(newDisplayGame);
       setReplayStep(targetStep);
       playSound('move');
   };
+
+  // Auto Replay Loop
+  useEffect(() => {
+    let interval: number;
+    if (gameMode === 'replay' && isPlaying && replayMasterGame.current) {
+        const delay = 1000 / replaySpeed;
+        interval = window.setInterval(() => {
+            setReplayStep(prev => {
+                if (prev < totalSteps) {
+                    stepReplay(1); // Manually trigger step from previous state logic
+                    return prev + 1; // Update state
+                } else {
+                    setIsPlaying(false);
+                    return prev;
+                }
+            });
+        }, delay);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, totalSteps, gameMode, replaySpeed]); // Removed replayStep dep to avoid re-creating interval rapidly
 
   const updateCapturedFromHistory = useCallback((currentHistory: Move[]) => {
       const newCaptured: { w: PieceSymbol[], b: PieceSymbol[] } = { w: [], b: [] };
@@ -354,7 +356,6 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                     setIsAiThinking(false);
                     if (moveString) executeGameMove(moveString);
                 } catch (e) {
-                    // Catch potential errors from aborted promises
                     if (isMounted.current) setIsAiThinking(false);
                 }
             };
@@ -415,7 +416,10 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
   const simpleHistory = game.history();
 
   return (
-    <div className="w-full h-full lg:h-[100dvh] flex flex-col lg:flex-row bg-[#050505] overflow-hidden fixed inset-0">
+    <div 
+        className="w-full h-full lg:h-[100dvh] flex flex-col lg:flex-row overflow-hidden fixed inset-0"
+        style={{ background: 'var(--app-bg)', color: 'var(--text-main)' }}
+    >
         <LiveStreamOverlay isStreaming={isStreaming} onStopStream={toggleStream} viewerCount={viewerCount} />
 
         <AnimatePresence>
@@ -441,18 +445,24 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         </AnimatePresence>
 
         {/* --- MOBILE: Top Bar (Fixed) --- */}
-        <div className="lg:hidden flex justify-between items-center p-3 bg-slate-900 border-b border-slate-800 z-20 shrink-0 safe-pt">
-            <button onClick={handleExitRequest} className="p-2 text-slate-400"><ChevronLeft className="w-5 h-5" /></button>
+        <div 
+            className="lg:hidden flex justify-between items-center p-3 border-b z-20 shrink-0 safe-pt"
+            style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--border-color)' }}
+        >
+            <button onClick={handleExitRequest} className="p-2" style={{ color: 'var(--text-muted)' }}><ChevronLeft className="w-5 h-5" /></button>
             <div className="font-black text-lg tracking-tight flex items-center gap-2">
-                NEXUS<span className="text-cyan-400">CHESS</span>
+                NEXUS<span style={{ color: 'var(--primary)' }}>CHESS</span>
                 {gameMode === 'spectator' && <span className="text-[10px] bg-red-600 px-2 rounded text-white animate-pulse">LIVE</span>}
             </div>
             <div className="w-9" />
         </div>
 
         {/* --- DESKTOP: Sidebar (Fixed Width) --- */}
-        <div className="hidden lg:flex flex-col w-80 bg-slate-900/50 border-r border-slate-800 p-6 z-10 shrink-0 h-full">
-             <button onClick={handleExitRequest} className="flex items-center gap-2 text-slate-400 hover:text-white mb-8">
+        <div 
+            className="hidden lg:flex flex-col w-80 border-r p-6 z-10 shrink-0 h-full"
+            style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--border-color)' }}
+        >
+             <button onClick={handleExitRequest} className="flex items-center gap-2 hover:text-white mb-8" style={{ color: 'var(--text-muted)' }}>
                 <ChevronLeft className="w-4 h-4" /> Exit Match
             </button>
             
@@ -477,16 +487,16 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                  )}
             </div>
             
-            <div className="flex-1 mt-6 bg-slate-950/50 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
-                <div className="p-3 bg-slate-900 font-bold text-xs text-slate-500 uppercase">Moves</div>
+            <div className="flex-1 mt-6 rounded-xl border overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}>
+                <div className="p-3 font-bold text-xs uppercase" style={{ backgroundColor: 'var(--element-bg)', color: 'var(--text-muted)' }}>Moves</div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                     <table className="w-full text-left text-sm text-slate-300">
+                     <table className="w-full text-left text-sm" style={{ color: 'var(--text-muted)' }}>
                          <tbody>
                             {historyRows.map((row, i) => (
-                                <tr key={i} className="border-b border-slate-800/50 last:border-0">
-                                    <td className="p-1 text-slate-600 w-8">{row.num}.</td>
-                                    <td className="p-1">{row.white.san}</td>
-                                    <td className="p-1">{row.black?.san}</td>
+                                <tr key={i} className="border-b last:border-0" style={{ borderColor: 'var(--border-color)' }}>
+                                    <td className="p-1 w-8 opacity-70">{row.num}.</td>
+                                    <td className="p-1 font-mono text-white">{row.white.san}</td>
+                                    <td className="p-1 font-mono text-white">{row.black?.san}</td>
                                 </tr>
                             ))}
                             <tr ref={el => el?.scrollIntoView()} />
@@ -497,8 +507,10 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
         </div>
 
         {/* --- MAIN AREA: BOARD + MOBILE CONTROLS --- */}
-        <div className="flex-1 flex flex-col bg-[#020617] relative w-full h-full overflow-hidden">
-            
+        <div 
+            className="flex-1 flex flex-col relative w-full h-full overflow-hidden"
+            style={{ backgroundColor: 'transparent' }}
+        >
             <div className="flex-1 flex flex-col justify-center items-center px-4 w-full min-h-0 relative">
                 
                 <div className="lg:hidden w-full max-w-md pb-2 shrink-0">
@@ -522,10 +534,13 @@ const GamePage: React.FC<GamePageProps> = ({ gameMode, difficulty = 'medium', re
                 </div>
             </div>
 
-             <div className="lg:hidden w-full bg-slate-900 border-t border-slate-800 p-3 flex flex-col gap-2 shrink-0 safe-pb z-20">
-                 <div className="h-8 bg-slate-950/50 rounded-lg overflow-x-auto whitespace-nowrap flex items-center px-2 border border-slate-800/50" ref={mobileHistoryRef}>
-                    {simpleHistory.length === 0 ? <span className="text-[10px] text-slate-600">Game started...</span> : simpleHistory.map((move, i) => (
-                        <span key={i} className="text-xs font-mono text-slate-400 mr-2">{i % 2 === 0 ? <span className="text-slate-600 mr-1">{(i/2)+1}.</span> : ''}<span className={i === simpleHistory.length - 1 ? "text-cyan-400 font-bold" : ""}>{move}</span></span>
+             <div 
+                className="lg:hidden w-full border-t p-3 flex flex-col gap-2 shrink-0 safe-pb z-20"
+                style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--border-color)' }}
+             >
+                 <div className="h-8 rounded-lg overflow-x-auto whitespace-nowrap flex items-center px-2 border" style={{ backgroundColor: 'var(--element-bg)', borderColor: 'var(--border-color)' }} ref={mobileHistoryRef}>
+                    {simpleHistory.length === 0 ? <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Game started...</span> : simpleHistory.map((move, i) => (
+                        <span key={i} className="text-xs font-mono mr-2" style={{ color: 'var(--text-muted)' }}>{i % 2 === 0 ? <span className="mr-1 opacity-70">{(i/2)+1}.</span> : ''}<span className={i === simpleHistory.length - 1 ? "font-bold text-[var(--primary)]" : "text-white"}>{move}</span></span>
                     ))}
                  </div>
 

@@ -43,7 +43,7 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
   
   // Theme State
   const [themeConfig, setThemeConfig] = useState<any>({ light: 'bg-[#334155]', dark: 'bg-[#1e293b]', accentColor: '#22d3ee', checkColor: '#f43f5e' });
-  const [activePieceSet, setActivePieceSet] = useState<'standard' | 'retro' | 'neon'>('standard');
+  const [activePieceSet, setActivePieceSet] = useState<'standard' | 'retro' | 'neon' | 'ranked'>('standard');
 
   // Promotion State
   const [promotionSquare, setPromotionSquare] = useState<SquareType | null>(null);
@@ -90,52 +90,76 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
         } else {
             const lastMoveInfo = history[history.length - 1];
             setPieces(prevPieces => {
+                // Create Deep Clone to avoid mutation issues
                 const newPieces = prevPieces.map(p => ({...p}));
                 const movingPieceIndex = newPieces.findIndex(p => p.square === lastMoveInfo.from);
                 
-                if (movingPieceIndex !== -1) {
-                     if (lastMoveInfo.captured) {
-                        const capturedSquare = lastMoveInfo.to;
-                        if (lastMoveInfo.flags.includes('e')) {
-                             const rank = parseInt(lastMoveInfo.to[1]);
-                             const file = lastMoveInfo.to[0];
-                             const captureRank = lastMoveInfo.color === 'w' ? rank - 1 : rank + 1;
-                             const epSquare = `${file}${captureRank}` as SquareType;
-                             const epIndex = newPieces.findIndex(p => p.square === epSquare);
-                             if (epIndex !== -1) newPieces.splice(epIndex, 1);
-                        } else {
-                             const capturedIndex = newPieces.findIndex(p => p.square === capturedSquare);
-                             if (capturedIndex !== -1) newPieces.splice(capturedIndex, 1);
-                        }
+                // Safety Check 1: Moving piece must exist visually
+                if (movingPieceIndex === -1) {
+                    return getScratchPieces(game);
+                }
+
+                // Handle Captures
+                if (lastMoveInfo.captured) {
+                    let captureIndex = -1;
+                    if (lastMoveInfo.flags.includes('e')) {
+                         // En Passant
+                         const rank = parseInt(lastMoveInfo.to[1]);
+                         const file = lastMoveInfo.to[0];
+                         const captureRank = lastMoveInfo.color === 'w' ? rank - 1 : rank + 1;
+                         const epSquare = `${file}${captureRank}` as SquareType;
+                         captureIndex = newPieces.findIndex(p => p.square === epSquare);
+                    } else {
+                         // Normal Capture
+                         captureIndex = newPieces.findIndex(p => p.square === lastMoveInfo.to);
                     }
 
-                    const pieceToMove = newPieces[movingPieceIndex];
-                    if (pieceToMove) {
-                        pieceToMove.square = lastMoveInfo.to;
-                        if (lastMoveInfo.promotion) pieceToMove.type = lastMoveInfo.promotion;
-                        if (lastMoveInfo.flags.includes('k') || lastMoveInfo.flags.includes('q')) {
-                            let rookFrom: SquareType | null = null;
-                            let rookTo: SquareType | null = null;
-                            const rank = lastMoveInfo.color === 'w' ? '1' : '8';
-                            if (lastMoveInfo.flags.includes('k')) { 
-                                rookFrom = `h${rank}` as SquareType; rookTo = `f${rank}` as SquareType;
-                            } else { 
-                                rookFrom = `a${rank}` as SquareType; rookTo = `d${rank}` as SquareType;
-                            }
-                            if (rookFrom && rookTo) {
-                                const rookIndex = newPieces.findIndex(p => p.square === rookFrom);
-                                if (rookIndex !== -1) newPieces[rookIndex].square = rookTo;
+                    // Safety Check 2: Captured piece must exist visually (prevent ghost pieces)
+                    if (captureIndex === -1) {
+                        return getScratchPieces(game);
+                    }
+                    newPieces.splice(captureIndex, 1);
+                }
+
+                const pieceToMove = newPieces[movingPieceIndex];
+                if (pieceToMove) {
+                    pieceToMove.square = lastMoveInfo.to;
+                    
+                    // Handle Promotion
+                    if (lastMoveInfo.promotion) {
+                        pieceToMove.type = lastMoveInfo.promotion;
+                    }
+                    
+                    // Handle Castling
+                    if (lastMoveInfo.flags.includes('k') || lastMoveInfo.flags.includes('q')) {
+                        let rookFrom: SquareType | null = null;
+                        let rookTo: SquareType | null = null;
+                        const rank = lastMoveInfo.color === 'w' ? '1' : '8';
+                        
+                        if (lastMoveInfo.flags.includes('k')) { 
+                            rookFrom = `h${rank}` as SquareType; rookTo = `f${rank}` as SquareType;
+                        } else { 
+                            rookFrom = `a${rank}` as SquareType; rookTo = `d${rank}` as SquareType;
+                        }
+                        
+                        if (rookFrom && rookTo) {
+                            const rookIndex = newPieces.findIndex(p => p.square === rookFrom);
+                            // Safety Check 3: Rook must exist for castling
+                            if (rookIndex !== -1) {
+                                newPieces[rookIndex].square = rookTo;
+                            } else {
+                                return getScratchPieces(game);
                             }
                         }
                     }
-                    return newPieces;
                 }
-                return getScratchPieces(game);
+                return newPieces;
             });
         }
         currentFen.current = game.fen();
     }
     
+    // Game Over Particle FX
     if (game.isGameOver() && game.isCheckmate()) {
         const loserColor = game.turn();
         const board = game.board();
@@ -406,12 +430,15 @@ const Board: React.FC<BoardProps> = ({ game, setGame, onMove, flip, setNotificat
                             )}
                         </AnimatePresence>
 
-                        {/* Valid Move Indicator */}
+                        {/* Valid Move Indicator with Ring Support for Low Contrast Themes */}
                         {isValidMove && !isValidCapture && (
                             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                                 <div 
-                                    className="w-3 h-3 rounded-full opacity-50 shadow-sm"
-                                    style={{ backgroundColor: themeConfig.moveIndicatorColor || themeConfig.accentColor || '#22d3ee' }}
+                                    className="w-3 h-3 rounded-full opacity-50 shadow-sm transition-all"
+                                    style={{ 
+                                        backgroundColor: themeConfig.moveIndicatorColor || themeConfig.accentColor || '#22d3ee',
+                                        boxShadow: themeConfig.moveIndicatorRing ? `0 0 0 2px ${themeConfig.moveIndicatorRing}` : 'none'
+                                    }}
                                 />
                             </div>
                         )}
